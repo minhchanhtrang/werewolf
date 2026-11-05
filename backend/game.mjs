@@ -287,7 +287,7 @@ export function gameView(game, userId) {
     id: game.id, phase: game.phase, phaseId: game.phaseId, day: game.day, startedAt: game.startedAt,
     phaseNotice: game.phaseNotice || null, replayVote: replayView(game, userId),
     isTest: game.isTest, myRole: me?.role || null, selfAlive: Boolean(me?.alive),
-    deadline: game.deadline, serverNow: Date.now(), winner: game.winner,
+    deadline: game.deadline, phaseDuration: durations[game.phase] || null, serverNow: Date.now(), winner: game.winner,
     roster: game.players.map(player => ({
       id: player.id, name: player.name, character: player.character, bot: player.bot, alive: player.alive,
       ...(game.phase === "ended" ? { role: player.role } : {})

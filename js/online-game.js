@@ -12,6 +12,7 @@ export function createOnlineGame(onAction) {
   const status = document.querySelector("#onlineActionStatus");
   const history = document.querySelector("#onlineHistory");
   const timer = document.querySelector("#onlineTimer");
+  const timeProgress = document.querySelector("#timeProgress");
   const result = document.querySelector("#gameResult");
   const resultPlayers = document.querySelector("#resultPlayers");
   const guide = document.querySelector("#phaseGuide");
@@ -77,6 +78,11 @@ export function createOnlineGame(onAction) {
     const seconds = current?.deadline ? Math.max(0, Math.ceil((current.deadline - Date.now() - offset) / 1000)) : null;
     timer.textContent = seconds === null ? "" : "Còn " + seconds + " giây";
     timer.classList.toggle("urgent", seconds !== null && seconds <= 5);
+    timeProgress.hidden = seconds === null;
+    const duration = current?.phaseDuration;
+    timeProgress.value = seconds === null || !duration ? 0 : Math.min(1, Math.max(0, (current.deadline - Date.now() - offset) / duration));
+    timeProgress.classList.toggle("urgent", seconds !== null && seconds <= 5);
+    timeProgress.setAttribute("aria-valuetext", seconds === null ? "" : "Còn " + seconds + " giây");
     if (seconds === 0) {
       button.disabled = true;
       for (const control of [healButton, poisonButton, skipButton]) control.disabled = true;

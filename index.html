@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d14">
+  <title>Ma Sói · Đêm bên lửa trại</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="./css/style.css">
+  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/auth.js"></script>
+  <script type="module" src="./js/lobby.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 1 · ĐĂNG NHẬP
+══════════════════════════════════════════════ -->
+<div id="screen-login" class="screen s-login">
+  <div class="s-login__bg" aria-hidden="true">
+    <div class="s-login__stars"></div>
+    <div class="s-login__moon"></div>
+    <div class="s-login__trees">🌲 🌲 🌲 🌲 🌲 🌲 🌲</div>
+    <div class="s-login__glow"></div>
+  </div>
+
+  <div class="s-login__content">
+    <div class="s-login__brand">
+      <span class="eyebrow">MA SÓI · VÒNG TRẠI</span>
+      <h1>Đêm bên lửa trại</h1>
+      <p class="s-login__tagline">Một ngôi làng. Những bí mật.<br>Ai sẽ sống đến bình minh?</p>
+    </div>
+
+    <div class="s-login__card">
+      <h2 id="accountHeading">Đăng nhập</h2>
+      <form id="authForm" class="s-login__form">
+        <div class="field">
+          <label for="username">Tên đăng nhập</label>
+          <input id="username" name="username" autocomplete="username" required
+            minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]{3,24}"
+            placeholder="nguoichoi01">
+        </div>
+        <div class="field">
+          <label for="password">Mật khẩu</label>
+          <input id="password" name="password" type="password"
+            autocomplete="current-password" required minlength="1" maxlength="4"
+            placeholder="1–4 ký tự">
+        </div>
+        <div class="field" id="confirmationLabel" hidden>
+          <label for="passwordConfirmation">Nhập lại mật khẩu</label>
+          <input id="passwordConfirmation" name="confirmation" type="password"
+            autocomplete="new-password" minlength="1" maxlength="4">
+        </div>
+        <button class="btn btn--primary" id="loginButton" type="submit">Đăng nhập</button>
+        <button class="btn btn--primary" id="registerButton" type="submit" hidden>Tạo tài khoản</button>
+      </form>
+      <div class="s-login__switch">
+        <button class="btn btn--ghost" id="switchAuth" type="button">Chưa có tài khoản? Đăng ký</button>
+      </div>
+      <p id="authMessage" class="form-msg" role="status" aria-live="polite"></p>
+      <p class="hint">Username: 3–24 ký tự, không dấu, không khoảng trắng.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 2 · SẢNH (LOBBY)
+══════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen s-lobby" hidden>
+
+  <!-- Top nav -->
+  <nav class="topbar">
+    <div class="topbar__brand">
+      <span class="fire-icon" aria-hidden="true">🔥</span>
+      <span class="topbar__title">Ma Sói</span>
+    </div>
+    <div class="topbar__user">
+      <strong id="accountName"></strong>
+      <button class="btn btn--ghost btn--sm" id="logoutButton" type="button" hidden>Đăng xuất</button>
+    </div>
+    <p id="accountStatus" class="topbar__status" role="status"></p>
+  </nav>
+
+  <div class="s-lobby__body">
+
+    <!-- LEFT: actions -->
+    <aside class="s-lobby__panel">
+      <section class="card" aria-labelledby="lobbyHeading">
+        <h2 class="card__title" id="lobbyHeading" tabindex="-1">Sảnh chờ</h2>
+        <p id="screenLabel" class="eyebrow" aria-live="polite" hidden></p>
+
+        <!-- Room entry (create / join) -->
+        <div id="roomEntry">
+          <p class="card__sub">Tham gia cùng bạn bè quanh lửa trại.</p>
+          <button class="btn btn--primary btn--wide" id="createRoom" type="button" disabled>
+            🏕️&nbsp; Tạo phòng mới
+          </button>
+          <div class="divider"><span>hoặc nhập mã</span></div>
+          <form id="joinRoomForm" class="join-form">
+            <input id="roomCodeInput" name="code" required minlength="6" maxlength="6"
+              pattern="[a-fA-F0-9]{6}" placeholder="A1B2C3" autocomplete="off" disabled
+              class="code-input">
+            <button class="btn btn--secondary" id="joinRoom" type="submit" disabled>Vào phòng</button>
+          </form>
+        </div>
+
+        <!-- Room stage (while in room but not in game) — same IDs, used by lobby.js -->
+        <div id="roomStage" hidden>
+          <div class="room-bar compact-room-bar">
+            <div>
+              <span class="eyebrow">MÃ PHÒNG</span>
+              <h3 class="room-code-display">Phòng <span id="roomCode"></span></h3>
+            </div>
+            <button id="copyRoomCode" class="btn btn--ghost btn--sm" type="button">📋 Sao chép</button>
+            <strong id="roomCount" class="room-count"></strong>
+          </div>
+          <p id="copyRoomStatus" class="hint" role="status"></p>
+          <div id="roomTools" class="tool-buttons">
+            <button class="btn btn--danger btn--sm" id="leaveRoom">Rời phòng</button>
+            <button class="btn btn--ghost btn--sm" id="resetRoom" hidden>Kết thúc ván / Về phòng chờ</button>
+          </div>
+        </div>
+
+        <p id="roomMessage" class="form-msg" role="status" aria-live="polite"></p>
+      </section>
+
+      <!-- Prototype (single-machine) panel - hidden -->
+      <details class="prototype-panel card card--muted" hidden>
+        <summary>🧪 Thử luật trên một máy</summary>
+        <div class="game-bar"><strong id="phaseLabel" aria-live="polite">Chuẩn bị</strong><span id="aliveCount"></span></div>
+        <div class="scene" id="scene" aria-label="Mười người chơi quanh lửa trại">
+          <div class="moon" aria-hidden="true"></div>
+          <div class="trees" aria-hidden="true">♠ ♠ ♠ ♠ ♠</div>
+          <div class="ground"></div>
+          <div class="fire" aria-hidden="true"><span class="flame">🔥</span></div>
+        </div>
+        <div class="controls">
+          <button class="action" id="startVoting">Bắt đầu bỏ phiếu</button>
+          <button class="action" id="chooseTarget" aria-pressed="false">Chọn mục tiêu</button>
+          <button class="action" id="revealVotes" disabled>Công bố phiếu</button>
+          <button class="action" id="toggleSleep" disabled>Bắt đầu đêm</button>
+          <button class="action secondary" id="clearVotes">Ván mới</button>
+          <span id="selection" aria-live="polite">Chưa chọn người chơi.</span>
+        </div>
+        <div class="dashboard">
+          <section class="vote-panel" aria-labelledby="voteHeading">
+            <div class="panel-heading"><h2 id="voteHeading">Diễn biến</h2><p id="voteTimer" class="timer">Thời gian: —</p></div>
+            <p id="voteProgress" aria-live="polite">Chưa bắt đầu.</p>
+            <p id="nightActions" hidden></p>
+            <p id="voteResult" aria-live="polite"></p>
+            <aside id="seerPanel" hidden><h3>🔮 Kết quả Tiên tri</h3><p id="seerResult" aria-live="polite"></p></aside>
+          </section>
+          <section class="vote-panel"><h2>Nhật ký ván</h2><ol id="gameHistory" class="history"><li>Chưa có sự kiện.</li></ol></section>
+        </div>
+        <details class="vote-panel">
+          <summary>Hướng dẫn &amp; công cụ quản trò</summary>
+          <div class="tool-buttons"><button class="action secondary" id="toggleRoles" aria-pressed="true">Ẩn vai</button><button class="action secondary" id="autoVotes" disabled>Điền phiếu ngẫu nhiên</button></div>
+        </details>
+      </details>
+    </aside>
+
+    <!-- RIGHT: intro -->
+    <main class="s-lobby__intro" aria-label="Giới thiệu game">
+      <h2 class="intro-heading">Giới thiệu</h2>
+
+      <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" id="tab-roles" role="tab"
+          aria-selected="true" aria-controls="tabpanel-roles" type="button">
+          🐺 Nhân vật &amp; Vai trò
+        </button>
+        <button class="tab-btn" id="tab-story" role="tab"
+          aria-selected="false" aria-controls="tabpanel-story" type="button">
+          📖 Cốt truyện
+        </button>
+      </div>
+
+      <!-- Tab: Nhân vật -->
+      <div id="tabpanel-roles" role="tabpanel" aria-labelledby="tab-roles" class="tabpanel">
+        <div class="role-grid">
+
+          <article class="role-card-intro role-wolf">
+            <div class="role-card-intro__img">
+              <img src="/assets/role/role-wolf.png" alt="" width="200" height="200" loading="lazy">
+            </div>
+            <div class="role-card-intro__body">
+              <h3>🐺 Ma Sói</h3>
+              <p>Ẩn mình trong bóng tối, tấn công một người mỗi đêm. Phe Sói thắng khi số Sói sống bằng hoặc vượt số Dân còn lại.</p>
+              <span class="role-tag role-tag--evil">Phe Ác</span>
+            </div>
+          </article>
+
+          <article class="role-card-intro role-seer">
+            <div class="role-card-intro__img">
+              <img src="/assets/role/role-seer.png" alt="" width="200" height="200" loading="lazy">
+            </div>
+            <div class="role-card-intro__body">
+              <h3>👁️ Tiên tri</h3>
+              <p>Mỗi đêm soi một người — biết họ là Sói hay không. Thông tin quý giá nhưng hãy cẩn thận khi chia sẻ.</p>
+              <span class="role-tag role-tag--good">Phe Dân</span>
+            </div>
+          </article>
+
+          <article class="role-card-intro role-guard">
+            <div class="role-card-intro__img">
+              <img src="/assets/role/role-guard.png" alt="" width="200" height="200" loading="lazy">
+            </div>
+            <div class="role-card-intro__body">
+              <h3>🛡️ Bảo vệ</h3>
+              <p>Mỗi đêm bảo vệ một người khỏi Sói. Có thể tự bảo vệ nhưng không lặp người hai đêm liền.</p>
+              <span class="role-tag role-tag--good">Phe Dân</span>
+            </div>
+          </article>
+
+          <article class="role-card-intro role-witch">
+            <div class="role-card-intro__img">
+              <img src="/assets/role/role-witch.png" alt="" width="200" height="200" loading="lazy">
+            </div>
+            <div class="role-card-intro__body">
+              <h3>🧙 Phù thủy</h3>
+              <p>Có 1 bình cứu và 1 bình độc cho cả ván. Mỗi đêm dùng tối đa 1 bình. Bình độc không bị Bảo vệ chặn.</p>
+              <span class="role-tag role-tag--good">Phe Dân</span>
+            </div>
+          </article>
+
+          <article class="role-card-intro role-villager">
+            <div class="role-card-intro__img">
+              <img src="/assets/role/role-villager.png" alt="" width="200" height="200" loading="lazy">
+            </div>
+            <div class="role-card-intro__body">
+              <h3>🧑‍🌾 Dân làng</h3>
+              <p>Không có năng lực đặc biệt, nhưng có quyền bỏ phiếu ban ngày. Thảo luận và loại bỏ Sói.</p>
+              <span class="role-tag role-tag--good">Phe Dân</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- Tab: Cốt truyện -->
+      <div id="tabpanel-story" role="tabpanel" aria-labelledby="tab-story" class="tabpanel" hidden>
+        <div class="story-block">
+          <div class="story-deco" aria-hidden="true">🌲&ensp;🌕&ensp;🌲</div>
+          <p>Một ngôi làng nhỏ nằm sâu trong rừng già đang chịu lời nguyền của bầy <strong>Ma Sói</strong>. Mỗi đêm, bóng tối buông xuống, một người dân vô tội lại biến mất.</p>
+          <p>Ban ngày, dân làng họp lại bàn luận, tranh cãi — ai trong số họ đang che giấu bộ mặt thật? Liệu <strong>Tiên tri</strong> có thể tìm ra Sói trước khi quá muộn? <strong>Phù thủy</strong> còn bình thuốc nào? Và <strong>Bảo vệ</strong> có ở đúng chỗ đúng lúc?</p>
+          <blockquote>Chỉ có trí tuệ, lòng tin và một chút may mắn mới có thể cứu được ngôi làng này.</blockquote>
+          <div class="story-rules">
+            <h4>Luật cơ bản</h4>
+            <ul>
+              <li><strong>Ban ngày:</strong> thảo luận &amp; bỏ phiếu kín. Hòa → không loại ai.</li>
+              <li><strong>Ban đêm:</strong> Sói tấn công, đặc biệt dùng năng lực.</li>
+              <li><strong>Dân thắng</strong> khi hết Sói; <strong>Sói thắng</strong> khi số Sói ≥ số Dân còn sống.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 3 · PHÒNG CHỜ (WAITING ROOM)
+     Rendered by lobby.js via #waitingRoom visibility
+══════════════════════════════════════════════ -->
+<div id="screen-waiting" class="screen s-waiting" hidden>
+  <nav class="topbar">
+    <div class="topbar__brand">
+      <span class="fire-icon" aria-hidden="true">🔥</span>
+      <span class="topbar__title">Ma Sói</span>
+    </div>
+    <div class="topbar__user">
+      <strong id="accountName-waiting"></strong>
+      <button class="btn btn--ghost btn--sm" id="logoutButton-waiting" type="button" hidden>Đăng xuất</button>
+    </div>
+  </nav>
+
+  <div class="s-waiting__body">
+    <div class="s-waiting__code-card">
+      <span class="eyebrow">MÃ PHÒNG</span>
+      <div class="waiting-code" id="roomCode-waiting-display">——————</div>
+      <button class="btn btn--ghost btn--sm" id="copyRoomCode-waiting" type="button">📋 Sao chép mã phòng</button>
+      <p id="copyRoomStatus-waiting" class="hint" role="status"></p>
+    </div>
+
+    <section class="s-waiting__section card" id="waitingRoom" aria-labelledby="waitingHeading">
+      <div class="room-bar">
+        <h2 id="waitingHeading">Thành viên phòng</h2>
+        <strong id="roomCount-waiting" class="room-count"></strong>
+      </div>
+      <p id="waitingRules" class="hint"></p>
+      <p id="readyCount" class="ready-count"></p>
+
+      <ol id="roomMembers" class="room-members" aria-label="Thành viên phòng"></ol>
+
+      <div class="tool-buttons s-waiting__actions">
+        <button class="btn btn--primary" id="readyRoom" aria-pressed="false">✅ Sẵn sàng</button>
+        <button class="btn btn--primary" id="startRoom" hidden>🚀 Bắt đầu ván</button>
+      </div>
+
+      <details id="botTools" class="subtle-details">
+        <summary>🤖 Thêm bot chơi thử</summary>
+        <div class="tool-buttons">
+          <button class="btn btn--ghost btn--sm" id="fillBots" hidden>Thêm 1 bot</button>
+          <button class="btn btn--ghost btn--sm" id="removeBots" hidden>Xóa bot</button>
+        </div>
+      </details>
+
+      <div class="tool-buttons s-waiting__leave">
+        <button class="btn btn--danger btn--sm" id="leaveRoom-waiting">🚪 Rời phòng</button>
+        <button class="btn btn--ghost btn--sm" id="resetRoom-waiting" hidden>↩ Kết thúc ván / Về phòng chờ</button>
+      </div>
+
+      <p id="roomMessage-waiting" class="form-msg" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 4 · GAME (FULLSCREEN HUD)
+══════════════════════════════════════════════ -->
+<div id="screen-game" class="screen s-game s-game--fullscreen" hidden>
+
+  <!-- TOP BAR: Header + Thông tin giai đoạn + Thời gian + Hướng dẫn & Nhật ký + Nút xem vai + User Avatar Menu -->
+  <header class="game-hud-top">
+    <div class="game-hud-top__left">
+      <!-- Mã phòng ẩn trong màn hình game theo yêu cầu -->
+      <span class="game-hud-title" hidden><strong id="roomCode-game" class="game-room-code"></strong></span>
+      <span class="badge-phase" id="onlinePhase"></span>
+      <span class="badge-alive" id="onlineLiving"></span>
+
+      <!-- Nút xem nhanh hướng dẫn luật đặt ngay cạnh thanh Log bên trái -->
+      <details class="game-guide-dropdown">
+        <summary class="btn btn--ghost btn--sm">ℹ️ Hướng dẫn</summary>
+        <div class="game-guide-popover">
+          <h4>Hướng dẫn lượt này</h4>
+          <p id="phaseGuide" class="phase-guide-text"></p>
+        </div>
+      </details>
+
+      <!-- Nhật ký game dropdown -->
+      <details id="chatGameLog" class="game-log-dropdown" hidden>
+        <summary class="btn btn--ghost btn--sm">📜 Nhật ký <span id="gameLogCount"></span></summary>
+        <div class="game-log-popover">
+          <h4>Nhật ký diễn biến</h4>
+          <ol id="onlineHistory" class="history"></ol>
+        </div>
+      </details>
+    </div>
+
+    <!-- Center: Countdown Timer nổi bật -->
+    <div class="game-hud-top__center">
+      <div class="game-timer-card">
+        <span class="timer-icon">⏳</span>
+        <strong id="onlineTimer" class="timer">--:--</strong>
+      </div>
+    </div>
+
+    <div class="game-hud-top__right">
+      <!-- Nút xem vai bí mật luôn có sẵn trên HUD -->
+      <button id="toggleRole" class="btn btn--gold btn--sm hud-role-btn" type="button"
+        aria-expanded="false" aria-controls="roleCard">🃏 Xem vai</button>
+
+      <!-- User Avatar Box: Không có icon người và không có chữ Đã đăng nhập, click mở menu Đăng xuất & Về phòng chờ -->
+      <details class="user-avatar-dropdown">
+        <summary class="user-avatar-badge" title="Tài khoản & Tùy chọn">
+          <strong id="accountName-game" class="game-username"></strong>
+          <span class="user-avatar-caret">▾</span>
+        </summary>
+        <div class="user-avatar-menu">
+          <div class="user-avatar-menu__header">
+            <span class="muted">Tùy chọn</span>
+          </div>
+          <button class="btn btn--ghost btn--sm btn--menu" id="resetRoom-game" type="button" hidden>↩ Về sảnh chờ</button>
+          <button class="btn btn--ghost btn--sm btn--menu" id="logoutButton-game" type="button" hidden>Đăng xuất</button>
+        </div>
+      </details>
+    </div>
+    <p id="accountStatus-game" class="topbar__status" role="status"></p>
+  </header>
+
+  <!-- ROLE CARD POPUP MODAL (Không chiếm diện tích màn hình game) -->
+  <aside id="myRolePanel" class="role-modal" hidden>
+    <div class="role-modal__backdrop" id="closeRoleBackdrop"></div>
+    <div class="role-modal__dialog">
+      <div class="role-modal__header">
+        <h3>Vai bí mật của bạn</h3>
+        <button id="closeRoleModal" class="btn btn--ghost btn--sm" type="button">✕ Đóng</button>
+      </div>
+      <p id="roleHint" class="hint">Chỉ mở khi không ai nhìn thấy màn hình của bạn.</p>
+      <div id="roleCard" class="role-card" hidden>
+        <img id="rolePortrait" alt="" width="512" height="512">
+        <h3 id="myRole"></h3>
+        <p id="roleDescription"></p>
+        <p class="role-secret">Giữ bí mật vai của bạn</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN SCENE: CHIẾM TOÀN BỘ KHÔNG GIAN Ở GIỮA -->
+  <main id="playScreen" class="s-game__center">
+    <section id="onlineGame" hidden aria-label="Ván online" class="online-game-container">
+
+      <!-- Thông báo kết quả ván đấu (overlay) -->
+      <section id="gameResult" class="game-result game-result--modal" aria-labelledby="resultHeading" hidden>
+        <p class="eyebrow">VÁN ĐÃ KẾT THÚC</p>
+        <h2 id="resultHeading"></h2>
+        <p id="resultSummary"></p>
+        <ul id="resultPlayers" class="result-players"></ul>
+        <div class="game-result__actions">
+          <button class="btn btn--primary btn--wide" id="resetRoom-result" type="button">↩ Về phòng chờ</button>
+          <p class="hint" id="resultHostHint">Kết quả chỉ hiện tạm 60 giây rồi về phòng chờ. Nhật ký của ván không được lưu sau trận.</p>
+        </div>
+      </section>
+
+      <!-- Thông báo chuyển pha ván đấu -->
+      <section id="phaseNotice" class="phase-notice-toast" aria-labelledby="phaseNoticeHeading" hidden>
+        <div class="phase-notice-toast__inner">
+          <h3 id="phaseNoticeHeading"></h3>
+          <p id="phaseNoticeText" role="status" aria-live="polite"></p>
+          <button id="dismissPhaseNotice" class="btn btn--ghost btn--sm" type="button">✕</button>
+        </div>
+      </section>
+
+      <!-- Game Stage Pixel Scene: Tự căn chỉnh vừa khít trung tâm -->
+      <div class="game-arena">
+        <div class="scene pixel-scene" id="onlineScene" aria-label="Người chơi trong phòng online">
+          <div class="moon" aria-hidden="true"></div>
+          <div class="ground"></div>
+          <div class="fire" aria-hidden="true"><span class="flame">🔥</span></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BOTTOM BAR: THANH TƯƠNG TÁC THEO TỪNG VAI (Bỏ phiếu, Sói cắn, Tiên tri soi, Bảo vệ...) -->
+  <footer class="game-hud-bottom">
+    <div class="game-hud-bottom__inner">
+
+      <!-- Hướng dẫn / Tình trạng hành động hiện tại -->
+      <div class="game-hud-info">
+        <p id="onlineActionStatus" class="hud-action-text" role="status"></p>
+        <p id="onlineTeam" class="hud-team-text"></p>
+        <p id="onlineSeer" class="hud-seer-text"></p>
+      </div>
+
+      <!-- Khung tương tác chính: Chọn mục tiêu & Gửi hành động -->
+      <div class="game-hud-controls">
+        <form id="onlineActionForm" class="hud-action-form">
+          <label for="onlineTarget" class="hud-target-label">Mục tiêu:</label>
+          <select id="onlineTarget" class="hud-select"></select>
+          <button id="onlineSubmit" type="submit" class="btn btn--primary btn--hud">Gửi lựa chọn</button>
+        </form>
+
+        <!-- Điều khiển của Phù thủy -->
+        <section id="witchControls" class="witch-controls-hud" hidden aria-label="Bình thuốc Phù thủy">
+          <span id="witchStatus" class="witch-status-text"></span>
+          <div class="tool-buttons">
+            <button id="witchHeal" class="btn btn--primary btn--sm" type="button">❤️ Cứu nạn nhân</button>
+            <button id="witchPoison" class="btn btn--danger btn--sm" type="button">☠️ Dùng bình độc</button>
+            <button id="witchSkip" class="btn btn--ghost btn--sm" type="button">Bỏ qua</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Nút rời phòng nằm cố định ở góc bên phải góc dưới -->
+      <div class="game-hud-leave">
+        <button class="btn btn--danger btn--sm" id="leaveRoom-game" type="button" title="Rời khỏi phòng">🚪 Rời phòng</button>
+      </div>
+
+      <!-- Nút xem nhanh hướng dẫn luật lượt này đã chuyển lên topbar cạnh thanh log -->
+    </div>
+  </footer>
+
+</div><!-- /screen-game -->
+
+</body>
+</html>

@@ -23,7 +23,7 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 - Phù thủy có một bình cứu và một bình độc cho cả ván, tối đa một bình mỗi đêm; tự cứu được, độc xuyên bảo vệ.
 - Phiếu giữ kín đến khi công bố; hòa không loại. Vai của người khác chỉ công khai khi kết thúc.
 - Ngoại hình ngẫu nhiên và đồng bộ suốt ván; có 10 mẫu nhân vật.
-- Nhật ký đọc tại nút Nhật ký. Không có chat hoặc tính năng kết bạn.
+- Nhật ký đọc tại nút Nhật ký. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói sống; tối đa 30 tin trong RAM, xóa khi hết ván. Chưa có tính năng kết bạn.
 - Dân thắng khi hết Sói. Sói thắng khi số Sói sống bằng hoặc vượt số người phe Dân sống.
 
 ## Dữ liệu
@@ -31,6 +31,10 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 Tài khoản và phiên đăng nhập được giữ trong PostgreSQL. Dữ liệu ván đang chơi được ghi tạm để đồng bộ và phục hồi. Khi kết thúc, dữ liệu ván được dọn khỏi CSDL; kết quả chỉ giữ trong RAM 60 giây. Không có chức năng lưu ván hay lưu lịch sử lâu dài. Bảng save/chat cũ được bỏ khi khởi động.
 
 Bộ prototype một máy cũ được giữ trong mã nguồn để tham khảo và kiểm tra luật, đang ẩn trên giao diện; ván online do backend điều khiển.
+
+Ảnh/HTML/CSS/JS dùng ETag và cache kiểm tra lại phiên bản. API phòng chỉ gửi lại dữ liệu khi nội dung thay đổi, không tính thay đổi đồng hồ vào phiên bản; JSON/code hỗ trợ gzip. Poll giảm tần suất khi ẩn tab hoặc ở sảnh. Chat Sói không ghi vào CSDL.
+
+Nén PNG lossless (không đổi pixel hoặc metadata): `node scripts/optimize-png.mjs`.
 
 ## Kiểm tra
 

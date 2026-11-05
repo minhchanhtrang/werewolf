@@ -4,6 +4,18 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ── 0. Reset & tokens ─────────────────────────────────────────────── */
+.wolf-chat { position: fixed; left: 12px; bottom: 112px; width: min(260px, calc(100vw - 24px)); z-index: 45; padding: 10px 12px; background: #131923f5; border: 1px solid #a66562; border-radius: 8px; box-shadow: 0 6px 24px #0006; font-size: 12px; }
+.wolf-chat summary { cursor: pointer; color: #edac98; }
+.wolf-chat__private { float: right; font-size: 10px; color: #a9b5c2; }
+#wolfChatMessages { list-style: none; max-height: min(160px, 25dvh); overflow-y: auto; overflow-wrap: anywhere; margin: 8px 0; }
+#wolfChatMessages li { padding: 5px 0; border-bottom: 1px solid #ffffff10; }
+#wolfChatMessages strong { color: #d6b499; font-size: 11px; }
+#wolfChatMessages p { white-space: pre-wrap; margin: 1px 0; }
+#wolfChatForm { display: flex; gap: 5px; }
+.wolf-chat__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+#wolfChatInput { width: 0; flex: 1; min-width: 0; background: #080d14; color: #f0ead8; border: 1px solid #52665b; border-radius: 4px; padding: 6px; font-size: 12px; }
+#wolfChatSend { padding: 5px 8px; font-size: 11px; }
+#wolfChatStatus:empty { display: none; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {

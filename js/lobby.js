@@ -4,6 +4,7 @@
 
 import { authState } from "./auth.js";
 import { createOnlineGame } from "./online-game.js";
+import { createWolfChat } from "./wolf-chat.js";
 import { MIN_PLAYERS, MAX_PLAYERS, describeRoles, canStartRoom } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
@@ -79,6 +80,8 @@ let room = null;
 let busy = false;
 let generation = 0;
 let controller = null;
+let revision = "";
+const renderWolfChat = createWolfChat(body => update("wolf-chat", body));
 
 const renderGame = createOnlineGame((targetId, kind) => {
   if (room?.game) update("act", { phaseId: room.game.phaseId, targetId, ...(kind ? { kind } : {}) });
@@ -212,6 +215,7 @@ function render() {
   }
 
   renderGame(room?.game, user?.id, busy);
+  renderWolfChat(room, busy);
   if (!room?.game) {
     hideRole();
     rolePortrait.removeAttribute("src");
@@ -325,16 +329,18 @@ async function request(action, body) {
   const response = await fetch("/api/rooms/" + action, {
     method: body === undefined ? "GET" : "POST",
     credentials: "same-origin",
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
+    headers: body === undefined ? (revision ? { "If-None-Match": revision } : {}) : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: controller.signal
   });
+  if (response.status === 304) return { unchanged: true };
   const data = await response.json();
   if (response.status === 401) window.dispatchEvent(new Event("sessionexpired"));
   if (!response.ok) throw Object.assign(
     new Error(data.error || "Không thể kết nối phòng."),
     { status: response.status }
   );
+  revision = response.headers.get("ETag") || "";
   return data;
 }
 
@@ -347,7 +353,7 @@ async function update(action = "current", body) {
   try {
     const data = await request(action, body);
     if (version !== generation) return;
-    if (JSON.stringify(room) !== JSON.stringify(data.room)) {
+    if (!data.unchanged && JSON.stringify(room) !== JSON.stringify(data.room)) {
       room = data.room;
       render();
     }
@@ -369,6 +375,7 @@ function accountChanged() {
   controller?.abort();
   busy = false;
   room = null;
+  revision = "";
   message.textContent = authState.user
     ? "Đang tìm phòng hiện tại…"
     : "Đăng nhập để tạo hoặc tham gia phòng.";
@@ -418,7 +425,12 @@ removeBots.addEventListener("click",  () => update("bots", { fill: false }));
 startRoom.addEventListener("click",   () => update("start", {}));
 resetRoom.addEventListener("click",   () => update("reset", {}));
 
-setInterval(() => update(), 2000);
+async function poll() {
+  await update();
+  setTimeout(poll, document.hidden || !room ? 10000 : 2000);
+}
+setTimeout(poll, 2000);
+window.addEventListener("visibilitychange", () => { if (!document.hidden) update(); });
 window.addEventListener("pageshow", () => update());
 
 // ── Boot ─────────────────────────────────────────────────────────────────────

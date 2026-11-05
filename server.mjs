@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -8,6 +8,7 @@ import { createDatabase, initializeDatabase } from "./backend/database.mjs";
 import { createAuth } from "./backend/auth.mjs";
 import { createRooms } from "./backend/rooms.mjs";
 import { startGameClock } from "./backend/game-clock.mjs";
+import { encodeBody } from "./backend/http-cache.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const envFile = path.join(root, ".env");
@@ -55,13 +56,23 @@ createServer(async (request, response) => {
       response.writeHead(404).end("Not found");
       return;
     }
-    const body = await readFile(path.join(root, relative));
+    const file = path.join(root, relative);
+    const info = await stat(file);
+    const tag = `W/"${info.size}-${Math.trunc(info.mtimeMs)}"`;
+    const cache = "public, max-age=0, must-revalidate";
+    if (request.headers["if-none-match"] === tag) {
+      response.writeHead(304, { ETag: tag, "Cache-Control": cache }).end();
+      return;
+    }
+    const original = await readFile(file);
+    const encoded = relative.endsWith(".png") ? { body: original, encoding: null } : encodeBody(request, original);
     response.writeHead(200, {
-      "Content-Type": types[path.extname(relative)], "Cache-Control": "no-store",
+      "Content-Type": types[path.extname(relative)], "Cache-Control": cache, ETag: tag, Vary: "Accept-Encoding",
+      ...(encoded.encoding ? { "Content-Encoding": encoded.encoding } : {}),
       "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin",
       "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     });
-    response.end(request.method === "HEAD" ? undefined : body);
+    response.end(request.method === "HEAD" ? undefined : encoded.body);
   } catch {
     response.writeHead(404).end("Not found");
   }

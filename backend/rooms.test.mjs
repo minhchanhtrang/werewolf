@@ -44,6 +44,10 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   const created=await api(0,"create",{});
   assert.equal(created.status,200);
   const code=created.data.room.code;
+  const first = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0] } });
+  const tag = first.headers.get("ETag"); await first.json();
+  const unchanged = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0], "If-None-Match": tag } });
+  assert.equal(unchanged.status, 304);
   assert.equal((await api(1,"join",{code})).status,200);
   assert.equal((await api(0,"start",{})).status,409);
   for(let i=0;i<3;i++){
@@ -65,6 +69,16 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   assert.ok(started.data.room.game.roster.every(p=>!("role" in p)));
   assert.equal((await api(0,"act",{phaseId:999,targetId:ids[1]})).status,409);
   assert.equal((await api(2,"join",{code})).status,409);
+  assert.equal((await api(2,"wolf-chat",{gameId:secret.id,text:"not a member"})).status,404);
+  const chatGame = structuredClone(secret);
+  chatGame.players.forEach((player, index) => { player.role = index < 2 ? "wolf" : "villager"; });
+  await pool.query("UPDATE ww_rooms SET role_state=$1::jsonb WHERE code=$2", [JSON.stringify(chatGame),code]);
+  assert.equal((await api(0,"wolf-chat",{gameId:secret.id,text:"private test"})).status,200);
+  assert.equal((await api(1,"current")).data.room.wolfChat.messages[0].text,"private test");
+  chatGame.players[1].alive = false;
+  await pool.query("UPDATE ww_rooms SET role_state=$1::jsonb WHERE code=$2", [JSON.stringify(chatGame),code]);
+  assert.equal((await api(1,"current")).data.room.wolfChat,null);
+  await pool.query("UPDATE ww_rooms SET role_state=$1::jsonb WHERE code=$2", [JSON.stringify(secret),code]);
   handler=createRooms(pool);
   assert.equal((await api(0,"current")).data.room.game.myRole,started.data.room.game.myRole);
   await pool.query("UPDATE ww_rooms SET role_state=jsonb_set(role_state,'{phase}','\"ended\"'::jsonb) WHERE code=$1",[code]);

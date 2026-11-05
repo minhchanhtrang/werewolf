@@ -6,6 +6,8 @@ import { advanceRoom } from "./game-clock.mjs";
 import { MAX_PLAYERS, canStartRoom } from "../js/rules.js";
 import { persistGame, finishedResult, forgetResult } from "./game-storage.mjs";
 import { allowedOrigin } from "./origin.mjs";
+import { readWolfChat, sendWolfChat } from "./wolf-chat.mjs";
+import { roomTag } from "./http-cache.mjs";
 
 const fault = (status, message) => Object.assign(new Error(message), { status });
 
@@ -26,7 +28,8 @@ async function currentRoom(db, userId) {
   return {
     code: row.code, host_id: row.host_id, capacity: MAX_PLAYERS,
     members: [...row.members, ...bots],
-    game: privateRoleView(game, userId)
+    game: privateRoleView(game, userId),
+    wolfChat: readWolfChat(game, userId)
   };
 }
 
@@ -35,7 +38,7 @@ export function createRooms(pool) {
     const actions = {
       "/api/rooms/current": "GET", "/api/rooms/create": "POST",
       "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST",
-      "/api/rooms/bots": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST"
+      "/api/rooms/bots": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
     if (!actions[pathname]) return json(response, 404, { error: "Không có API phòng này." });
     if (request.method !== actions[pathname]) return json(response, 405, { error: "Phương thức không hợp lệ." });
@@ -54,7 +57,12 @@ export function createRooms(pool) {
         // Đọc thành viên và ván dưới cùng một khóa phòng.
         const room = await currentRoom(client, user.id);
         await client.query("COMMIT");
-        return json(response, 200, { room });
+        const tag = roomTag(room);
+        if (request.headers["if-none-match"] === tag) {
+          response.writeHead(304, { ETag: tag, "Cache-Control": "no-store" }).end();
+          return;
+        }
+        return json(response, 200, { room }, request, { ETag: tag });
       }
       const body = await readBody(request);
       client = await pool.connect();
@@ -111,6 +119,10 @@ export function createRooms(pool) {
               await persistGame(client, code, game);
             }
           }
+        } else if (pathname.endsWith("/wolf-chat")) {
+          const game = room.rows[0].role_state;
+          if (advanceGame(game)) await persistGame(client, code, game);
+          sendWolfChat(game, user.id, body);
         } else if (pathname.endsWith("/act")) {
           const game = room.rows[0].role_state;
           advanceGame(game);
@@ -138,7 +150,7 @@ export function createRooms(pool) {
       }
       const room = await currentRoom(client, user.id);
       await client.query("COMMIT");
-      return json(response, 200, { room });
+      return json(response, 200, { room }, request, { ETag: roomTag(room) });
     } catch (error) {
       if (client) await client.query("ROLLBACK").catch(() => {});
       return json(response, error.status || 503, { error: error.status ? error.message : "Không thể cập nhật phòng. Vui lòng thử lại." });

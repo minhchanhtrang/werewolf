@@ -87,7 +87,7 @@ Bạn bè chỉ cần trình duyệt. Không cần cài Node.js, PostgreSQL hay 
 - Không dùng Render Postgres Free cho tài khoản cần giữ lâu: database gói đó hết hạn sau 30 ngày. Hướng dẫn này dùng Neon.
 - Ván đang chơi được ghi tạm để đồng bộ/phục hồi. Khi hết trận, trạng thái ván và nhật ký được dọn khỏi CSDL; màn kết quả chỉ còn trong RAM 60 giây. Nếu dịch vụ restart trong khoảng này, màn kết quả có thể mất.
 - Mật khẩu hiện vẫn **1–4 ký tự theo yêu cầu trước đó**. Chỉ nên dùng tài khoản thử, không dùng mật khẩu quan trọng hoặc mở đăng ký công khai rộng rãi trước khi nâng yêu cầu mật khẩu.
-- Chưa có kết bạn/tìm bạn. Không có chat trong game; người chơi tự dùng kênh nói chuyện bên ngoài.
+- Chưa có kết bạn/tìm bạn. Chỉ có chat riêng cho Sói còn sống khi có ít nhất 2 Sói sống; tin giữ trong RAM, không có lịch sử chat sau trận. Những người chơi khác tự dùng kênh nói chuyện bên ngoài.
 
 ## Khi deploy lỗi
 

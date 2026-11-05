@@ -474,6 +474,12 @@
     </div>
   </footer>
 
+  <details id="wolfChat" class="wolf-chat" hidden>
+    <summary>Chat Sói <span id="wolfChatCount"></span><span class="wolf-chat__private">Riêng</span></summary>
+    <ol id="wolfChatMessages" aria-label="Tin nhắn riêng giữa Sói còn sống"></ol>
+    <form id="wolfChatForm"><label class="wolf-chat__label" for="wolfChatInput">Tin nhắn cho đồng đội</label><input id="wolfChatInput" maxlength="300" required autocomplete="off" placeholder="Nhắn cho đồng đội…"><button id="wolfChatSend" class="btn btn--primary btn--sm" type="submit">Gửi</button></form>
+    <p id="wolfChatStatus" class="hint" role="status"></p>
+  </details>
 </div><!-- /screen-game -->
 
 </body>

@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { hashPassword, verifyPassword, validateCredentials } from "./password.mjs";
 import { allowedOrigin } from "./origin.mjs";
+import { encodeBody } from "./http-cache.mjs";
 
 const lifetime = 7 * 24 * 60 * 60;
 const digest = value => createHash("sha256").update(value).digest("hex");
@@ -10,9 +11,10 @@ const tokenFrom = request => {
   return /^[a-f0-9]{64}$/.test(token || "") ? token : null;
 };
 
-export function json(response, status, body) {
-  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-  response.end(JSON.stringify(body));
+export function json(response, status, body, request, extraHeaders = {}) {
+  const encoded = encodeBody(request, JSON.stringify(body));
+  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", Vary: "Accept-Encoding", ...(encoded.encoding ? { "Content-Encoding": encoded.encoding } : {}), ...extraHeaders });
+  response.end(encoded.body);
 }
 
 export async function readBody(request, maxBytes = 4096) {

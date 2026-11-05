@@ -22,6 +22,7 @@ export function createOnlineGame(onAction) {
   let userId = null;
   let eligible = [];
   let offset = 0;
+  let lastServerNow = null;
   let sceneKey = "";
   let optionsKey = "";
   let poisonMode = false;
@@ -89,7 +90,10 @@ export function createOnlineGame(onAction) {
       document.querySelector("#onlineScene").querySelectorAll(".name").forEach(node => { node.textContent = ""; });
       return;
     }
-    offset = game.serverNow - Date.now();
+    if (game.serverNow !== lastServerNow) {
+      offset = game.serverNow - Date.now();
+      lastServerNow = game.serverNow;
+    }
     const me = game.roster.find(player => player.id === id);
     const identity = game.id || game.startedAt;
     if (gameKey !== identity) {

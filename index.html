@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080d14">
   <title>Ma Sói · Đêm định mệnh</title>
+  <link rel="icon" type="image/png" href="./assets/backgrounds/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="./css/style.css">
   <script type="module" src="./js/app.js"></script>
@@ -66,7 +67,7 @@
   <!-- Top nav -->
   <nav class="topbar">
     <div class="topbar__brand">
-      <span class="fire-icon" aria-hidden="true">🔥</span>
+      <img class="topbar__logo" src="./assets/backgrounds/favicon.png" alt="" width="36" height="36">
       <span class="topbar__title">Ma Sói</span>
     </div>
     <div class="topbar__user">
@@ -279,7 +280,7 @@
 <div id="screen-waiting" class="screen s-waiting" hidden>
   <nav class="topbar">
     <div class="topbar__brand">
-      <span class="fire-icon" aria-hidden="true">🔥</span>
+      <img class="topbar__logo" src="./assets/backgrounds/favicon.png" alt="" width="36" height="36">
       <span class="topbar__title">Ma Sói</span>
     </div>
     <div class="topbar__user">
@@ -320,8 +321,8 @@
         <p class="hint">Chọn số lượng dưới mỗi lá bài. Tổng vai phải bằng số người; vai đặc biệt tối đa 1 mỗi loại.</p>
         <div id="roleConfigFields" class="role-config__fields"></div>
         <p id="waitingRules" class="hint"></p>
-        <button id="saveRoleConfig" type="submit" class="btn btn--gold btn--sm">Lưu bộ vai</button>
         <p id="roleConfigStatus" class="hint" role="status"></p>
+        <button id="saveRoleConfig" type="submit" class="btn btn--gold btn--sm">Lưu bộ vai</button>
       </form>
       <section class="waiting-roster card" aria-label="Người trong phòng">
         <div class="room-bar"><h3>Những người đã có mặt</h3><strong id="roomCount-waiting" class="room-count"></strong></div>

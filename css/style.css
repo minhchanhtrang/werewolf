@@ -5,6 +5,9 @@
 
 /* ── 0. Reset & tokens ─────────────────────────────────────────────── */
 .role-config { padding: 12px; border: 1px solid #75664b; border-radius: 8px; margin: 12px 0; }
+#saveRoleConfig { display: flex; justify-content: center; margin: 14px auto 0; }
+#roleConfigForm #waitingRules { margin: 0 0 4px; }
+#roleConfigForm #roleConfigStatus { margin: 0; }
 .role-config__fields { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
 .role-config__fields label { display: grid; gap: 4px; width: 110px; }
 .role-config__fields input { width: 100%; padding: 7px; background: #141d25; color: #eee; border: 1px solid #75664b; }
@@ -288,11 +291,13 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 }
 
 .s-login__card h2 {
+  text-align: center;
   margin-bottom: 20px;
   font-family: Georgia, serif;
 }
 
 .s-login__form { display: flex; flex-direction: column; gap: 16px; }
+.s-login__form > .btn { justify-content: center; text-align: center; width: 100%; }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
@@ -331,7 +336,7 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 
 .topbar__brand { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .topbar__title { font-weight: 700; font-size: 17px; color: var(--gold); font-family: Georgia, serif; }
-.fire-icon { font-size: 20px; }
+.topbar__logo { display: block; width: 36px; height: 36px; flex-shrink: 0; object-fit: contain; image-rendering: pixelated; }
 
 .topbar__user { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .topbar__user strong { font-size: 13px; color: var(--text-secondary); }
@@ -657,7 +662,7 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 
 .s-waiting__section { width: 100%; }
 .waiting-sidebar { display: grid; gap: 14px; min-width: 0; }
-.waiting-sidebar .s-waiting__code-card { padding: 20px 12px; text-align: left; }
+.waiting-sidebar .s-waiting__code-card { padding: 20px 12px; text-align: center; }
 .waiting-sidebar .waiting-code { font-size: 32px; letter-spacing: 4px; }
 .waiting-tools { display: grid; gap: 10px; }
 .waiting-tools.card { padding: 16px; }

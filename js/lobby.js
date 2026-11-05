@@ -329,10 +329,12 @@ function render() {
   }
   for (const input of roleFields.querySelectorAll("input")) input.disabled = !host || busy || dealt;
   document.querySelector("#saveRoleConfig").hidden = !host;
-  document.querySelector("#saveRoleConfig").disabled = busy || dealt;
+  document.querySelector("#saveRoleConfig").disabled = busy || dealt || count < MIN_PLAYERS;
   let validConfig = false;
   try { validateRoles(room.roleConfig, count); validConfig = true; } catch {}
-  document.querySelector("#roleConfigStatus").textContent = validConfig ? "Bộ vai đã lưu. Mọi người hãy sẵn sàng." : "Chủ phòng cần lưu bộ vai có tổng bằng " + count + " người.";
+  document.querySelector("#roleConfigStatus").textContent = count < MIN_PLAYERS
+    ? "Khi đủ ít nhất 5 người, chủ phòng chọn tổng số vai bằng số người trong phòng."
+    : validConfig ? "Bộ vai đã lưu. Mọi người hãy sẵn sàng." : "Chủ phòng cần lưu bộ vai có tổng bằng " + count + " người.";
 
   document.querySelector("#waitingRules").textContent = count < MIN_PLAYERS
     ? "Cần thêm " + (MIN_PLAYERS - count) + " người để có thể bắt đầu."

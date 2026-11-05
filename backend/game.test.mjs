@@ -1,113 +1,140 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { beginGame, act, advanceGame, gameView, leaveGame } from "./game.mjs";
+import { validateRoles } from "../js/rules.js";
 
-function fixture() {
-  const members = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, username: "Player " + (i + 1), bot: false }));
-  const roles = ["wolf", "wolf", "seer", "guard", ...Array(6).fill("villager")];
-  const game = beginGame({ startedAt: new Date(1000).toISOString(), isTest: false, players: members.map((member, i) => ({ id: member.id, role: roles[i] })) }, members, 1000);
-  // Các ca bên dưới kiểm tra từ một lượt bỏ phiếu đang diễn ra.
-  game.phase = "voting";
-  return game;
+function fixture(roles = ["wolf","wolf","seer","guard","witch","hunter","idiot","villager","villager","villager"]) {
+  const members = roles.map((role,i) => ({id:i+1,username:"P"+(i+1)}));
+  return beginGame({players:roles.map((role,i)=>({id:i+1,role}))},members,Date.now());
 }
-const action = (game, id, targetId) => act(game, id, { phaseId: game.phaseId, targetId });
-const next = game => advanceGame(game, game.deadline);
+const next = g => advanceGame(g,g.deadline);
+const action = (g,id,targetId,kind) => act(g,id,{phaseId:g.phaseId,targetId,kind});
+function voting(g) { let n=0; while(g.phase!=="voting" && g.phase!=="ended" && n++<10) next(g); assert.equal(g.phase,"voting"); }
 
-test("Phiếu kín, chỉ nhận hành động đúng pha và không tự vote", () => {
-  const game = fixture();
-  action(game, 3, 1);
-  assert.equal(gameView(game, 3).myVote, 1);
-  assert.equal(gameView(game, 4).myVote, null);
-  assert.equal(gameView(game, 4).revealedVotes.length, 0);
-  assert.equal("votes" in gameView(game, 4), false);
-  assert.throws(() => action(game, 3, 3));
-  assert.throws(() => act(game, 3, { phaseId: 999, targetId: 1 }));
-  next(game);
-  assert.equal(game.phase, "revealed");
-  assert.equal(game.players[0].alive, false);
-  assert.deepEqual(gameView(game, 4).revealedVotes, [[3, 1]]);
-  assert.throws(() => action(game, 1, 3));
+test("Đêm tuần tự, chặn sai vai, soi riêng, cấm bảo vệ lặp",()=>{
+  const g=fixture(); assert.equal(g.phase,"guard");
+  action(g,4,3); assert.throws(()=>action(g,1,8)); next(g);
+  action(g,1,3); action(g,2,3); assert.throws(()=>action(g,1,2)); next(g);
+  assert.equal(g.phase,"seer"); action(g,3,1);
+  assert.match(gameView(g,3).seerResult.text,/là Sói/);
+  assert.equal(gameView(g,1).seerResult,null); assert.throws(()=>action(g,3,2));
+  next(g); assert.equal(g.phase,"witch"); assert.equal(gameView(g,5).witch.canHeal,false);
+  next(g); assert.ok(g.players[2].alive); voting(g); next(g); next(g);
+  assert.equal(g.phase,"guard"); assert.throws(()=>action(g,4,3));
 });
 
-test("Đêm: soi riêng một lần, bảo vệ hiệu lực và cấm lặp hai đêm", () => {
-  const game = fixture(); next(game); next(game);
-  assert.equal(game.phase, "night");
-  assert.throws(() => action(game, 1, 2));
-  assert.throws(() => action(game, 5, 1));
-  action(game, 3, 1);
-  assert.match(gameView(game, 3).seerResult.text, /là Sói/);
-  assert.equal(gameView(game, 1).seerResult, null);
-  assert.throws(() => action(game, 3, 2));
-  action(game, 4, 3); action(game, 1, 3); action(game, 2, 3);
-  next(game);
-  assert.equal(game.players[2].alive, true);
-  assert.equal(game.previousGuardTargetId, 3);
-  next(game); next(game); next(game);
-  assert.equal(game.phase, "night");
-  assert.throws(() => action(game, 4, 3));
-  action(game, 4, 4); action(game, 3, 2);
+test("Phù thủy cứu đêm đầu và dùng cả hai bình, không lộ nạn nhân",()=>{
+  const g=fixture(); next(g); action(g,1,8); action(g,2,8); next(g); next(g);
+  assert.ok(g.players[7].alive);
+  const view=gameView(g,5); assert.equal(view.witch.canHeal,true); assert.equal("victimId" in view.witch,false);
+  assert.equal(gameView(g,8).witch,null); action(g,5,null,"heal"); action(g,5,9,"poison");
+  assert.throws(()=>action(g,5,null,"heal")); assert.throws(()=>action(g,5,10,"poison"));
+  const restored=JSON.parse(JSON.stringify(g)); next(restored);
+  assert.ok(restored.players[7].alive); assert.equal(restored.players[8].alive,false);
+  assert.deepEqual(restored.witchPotions,{heal:false,poison:false});
 });
 
-test("Hòa phiếu và Sói bất đồng không loại người", () => {
-  const game = fixture(); action(game, 3, 1); action(game, 4, 2); next(game);
-  assert.ok(game.players.every(player => player.alive));
-  next(game); action(game, 1, 3); action(game, 2, 4); next(game);
-  assert.ok(game.players.every(player => player.alive));
+test("Bình độc xuyên Bảo vệ, cứu không chống độc",()=>{
+  const g=fixture(); action(g,4,8); next(g); action(g,1,9); action(g,2,9); next(g); next(g);
+  action(g,5,null,"heal"); action(g,5,8,"poison"); next(g);
+  assert.ok(g.players[8].alive); assert.equal(g.players[7].alive,false);
 });
 
-test("Trọn ván: Dân thắng, chỉ công khai vai lúc kết thúc", () => {
-  const game = fixture();
-  assert.ok(gameView(game, 3).roster.every(player => !("role" in player)));
-  assert.deepEqual(gameView(game, 1).wolfIds, [1, 2]);
-  assert.deepEqual(gameView(game, 3).wolfIds, []);
-  action(game, 3, 1); next(game); next(game); next(game); next(game);
-  assert.equal(game.day, 2);
-  action(game, 3, 2); next(game);
-  assert.equal(game.phase, "ended"); assert.equal(game.winner, "villagers");
-  assert.equal(game.deadline, null);
-  assert.ok(gameView(game, 3).roster.every(player => player.role));
-  const copy = JSON.stringify(game); advanceGame(game, 1e9);
-  assert.equal(JSON.stringify(game), copy);
+test("Vai chết/vai không được chọn vẫn có đủ lượt và thời gian như nhau",()=>{
+  const a=fixture(), b=fixture(); b.players[4].alive=false; b.players[2].alive=false; b.players[3].alive=false;
+  for(let i=0;i<4;i++) { assert.equal(a.phase,b.phase); assert.equal(a.deadline-a.phaseStartedAt,b.deadline-b.phaseStartedAt); next(a); next(b); }
+  assert.equal(a.phase,"dawn"); assert.equal(b.phase,"dawn");
 });
 
-test("Sói thắng khi bằng số phe Dân; rời ván bị loại", () => {
-  const game = fixture();
-  for (let id = 5; id <= 10; id++) leaveGame(game, id);
-  assert.equal(game.winner, "wolves");
-  assert.equal(game.phase, "ended");
+test("Sói xem mục tiêu riêng; hòa chọn ngẫu nhiên trong nhóm cao nhất",()=>{
+  let hits=new Set();
+  for(let i=0;i<80;i++) {
+    const g=fixture(); next(g); action(g,1,8); action(g,2,9);
+    assert.equal(gameView(g,1).wolfChoices[1].targetName,"P9");
+    assert.deepEqual(gameView(g,3).wolfChoices,[]); next(g);
+    assert.ok([8,9].includes(g.pendingAttackId)); hits.add(g.pendingAttackId);
+  }
+  assert.equal(hits.size,2);
 });
 
-test("Bot tự vote sau 3 giây, không lặp phiếu và không tự vote", () => {
-  const game = fixture(); game.players.slice(2).forEach(player => { player.bot = true; });
-  advanceGame(game, 3999); assert.equal(Object.keys(game.votes).length, 0);
-  advanceGame(game, 4000); assert.equal(Object.keys(game.votes).length, 8);
-  for (const [id, target] of Object.entries(game.votes)) assert.notEqual(Number(id), target);
-  const copy = JSON.stringify(game.votes); advanceGame(game, 5000);
-  assert.equal(JSON.stringify(game.votes), copy);
+test("Thảo luận 120 giây; phiếu trắng kín; tất cả vote rút còn 5 giây",()=>{
+  const g=fixture(); voting(g);
+  assert.equal(g.deadline-g.phaseStartedAt,120000);
+  // Dùng thời gian thực để gửi các phiếu trong cùng một lượt đang diễn ra.
+  g.phaseStartedAt=Date.now(); g.deadline=Date.now()+120000;
+  action(g,1,null,"blank"); assert.equal(gameView(g,1).hasVoted,true);
+  assert.equal(gameView(g,2).hasVoted,false); assert.equal(gameView(g,2).revealedVotes.length,0);
+  for(let id=2;id<=10;id++) action(g,id,null,"blank");
+  assert.ok(g.deadline-Date.now()<=5000); next(g);
+  assert.ok(g.players.every(p=>p.alive));
 });
 
-test("Bot dùng kỹ năng đúng vai vào ban đêm", () => {
-  const game = fixture();
-  game.phase = "night";
-  game.previousGuardTargetId = 3;
-  game.players.slice(0, 8).forEach(player => { player.bot = true; });
-  advanceGame(game, 4000);
-  assert.equal(Object.keys(game.actions).length, 4);
-  assert.ok(![1, 2].includes(game.actions[1]));
-  assert.equal(game.actions[1], game.actions[2]);
-  assert.notEqual(game.actions[3], 3);
-  assert.notEqual(game.actions[4], 3);
-  assert.ok(game.seerResults[3]);
-  const saved = JSON.stringify(game.actions);
-  advanceGame(game, 5000);
-  assert.equal(JSON.stringify(game.actions), saved);
+test("Thằng ngu thuộc phe thứ ba, thắng ngay khi bị vote loại",()=>{
+  const g=fixture(); voting(g); action(g,3,7); next(g);
+  assert.equal(g.players[6].alive,false);
+  assert.equal(g.phase,"ended"); assert.equal(g.winner,"idiot");
+  assert.equal(gameView(g,1).winner,"idiot");
+  assert.equal(gameView(g,1).roster[6].role,"idiot");
+  assert.equal(g.deadline,null);
 });
 
-test("Khôi phục thời gian cũ và không loại lại người đã rời", () => {
-  const game = fixture(); action(game, 3, 5); leaveGame(game, 5);
-  const persisted = JSON.parse(JSON.stringify(game));
-  advanceGame(persisted, 39000);
-  assert.equal(persisted.phase, "night");
-  assert.equal(persisted.players.filter(player => !player.alive).length, 1);
-  assert.ok(persisted.history.some(entry => /Không ai bị loại/.test(entry.text)));
+test("Thợ săn bắn khi bị Sói/treo cổ, trì hoãn thắng; độc không được bắn",()=>{
+  const g=fixture(); voting(g); action(g,3,6); next(g);
+  assert.equal(g.phase,"hunter"); assert.equal(gameView(g,6).hunterTurn,true);
+  action(g,6,1); assert.throws(()=>action(g,6,2)); next(g); assert.equal(g.players[0].alive,false);
+  const h=fixture(); next(h); action(h,1,6); action(h,2,6); next(h); next(h); next(h);
+  assert.equal(h.phase,"hunter"); action(h,6,null,"skip"); next(h); assert.equal(h.phase,"dawn");
+  const p=fixture(); next(p); next(p); next(p); action(p,5,6,"poison"); next(p);
+  assert.equal(p.phase,"dawn"); assert.equal(gameView(p,6).hunterTurn,false);
+});
+
+test("Chỉ Sói có quyền tự sát; rời ván và điều kiện thắng",()=>{
+  const g=fixture();
+  for(const id of [3,4,5,6,7,8]) assert.throws(()=>action(g,id,null,"suicide"),/Chỉ Sói/);
+  assert.ok(g.players.every(p=>p.alive));
+  action(g,1,null,"suicide"); assert.equal(g.players[0].alive,false);
+  assert.throws(()=>action(g,1,8)); voting(g);
+  leaveGame(g,1); leaveGame(g,2); assert.equal(g.phase,"ended"); assert.equal(g.winner,"villagers");
+  assert.ok(gameView(g,3).roster.every(p=>p.role)); assert.equal(g.deadline,null);
+});
+
+test("Thằng ngu không thắng khi hòa phiếu hoặc chết trong đêm",()=>{
+  const tied=fixture(); voting(tied); action(tied,3,7); action(tied,4,8); next(tied);
+  assert.equal(tied.winner,null); assert.ok(tied.players[6].alive);
+  const wolf=fixture(); next(wolf); action(wolf,1,7); action(wolf,2,7); next(wolf); next(wolf); next(wolf);
+  assert.equal(wolf.players[6].alive,false); assert.notEqual(wolf.winner,"idiot");
+  const poisoned=fixture(); next(poisoned); next(poisoned); next(poisoned); action(poisoned,5,7,"poison"); next(poisoned);
+  assert.equal(poisoned.players[6].alive,false); assert.notEqual(poisoned.winner,"idiot");
+});
+
+test("Bộ vai tùy chọn hợp lệ; chặn thiếu người, vai lạ và quá nhiều Sói",()=>{
+  assert.equal(validateRoles({wolf:2,villager:5},7).wolf,2);
+  assert.throws(()=>validateRoles({wolf:2,villager:4},7));
+  assert.throws(()=>validateRoles({wolf:3,villager:2},5));
+  assert.throws(()=>validateRoles({wolf:1,witch:2,villager:2},5));
+  assert.throws(()=>validateRoles({wolf:1,villager:4,admin:0},5));
+});
+
+test("Sói chọn theo đa số; Thợ săn trúng độc cùng lượt không được bắn",()=>{
+  const g=fixture(); next(g); action(g,1,8); action(g,2,8); next(g);
+  assert.equal(g.pendingAttackId,8); next(g); action(g,5,6,"poison"); next(g);
+  assert.equal(g.players[7].alive,false); assert.equal(g.players[5].alive,false);
+  assert.equal(g.phase,"dawn");
+});
+
+test("Phiếu trắng không tính là mục tiêu; người chết không được bỏ phiếu",()=>{
+  const g=fixture(); voting(g); action(g,1,null,"blank"); action(g,3,8); next(g);
+  assert.equal(g.players[7].alive,false);
+  assert.deepEqual(g.revealedVotes,[[3,8]]);
+  assert.throws(()=>action(g,8,1));
+});
+
+test("Thợ săn bắn xong mới xét thắng; quá giờ thì bỏ phát bắn",()=>{
+  const g=fixture(["wolf","hunter","villager","villager","villager"]);
+  g.players[3].alive=g.players[4].alive=false;
+  next(g); action(g,1,2); next(g); next(g); next(g);
+  assert.equal(g.phase,"hunter"); assert.equal(g.winner,null);
+  action(g,2,1); next(g); assert.equal(g.winner,"villagers");
+  const h=fixture(); voting(h); action(h,3,6); next(h); next(h);
+  assert.equal(h.phase,"revealed"); assert.equal(h.hunterPending,null);
 });

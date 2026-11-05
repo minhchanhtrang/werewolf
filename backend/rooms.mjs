@@ -3,7 +3,7 @@ import { getSessionUser, json, readBody } from "./auth.mjs";
 import { dealRoles, privateRoleView } from "./roles.mjs";
 import { beginGame, act, advanceGame, leaveGame } from "./game.mjs";
 import { advanceRoom } from "./game-clock.mjs";
-import { MAX_PLAYERS, canStartRoom } from "../js/rules.js";
+import { MAX_PLAYERS, canStartRoom, validateRoles } from "../js/rules.js";
 import { persistGame, finishedResult, forgetResult } from "./game-storage.mjs";
 import { allowedOrigin } from "./origin.mjs";
 import { readWolfChat, sendWolfChat } from "./wolf-chat.mjs";
@@ -13,7 +13,7 @@ const fault = (status, message) => Object.assign(new Error(message), { status })
 
 async function currentRoom(db, userId) {
   // Một câu truy vấn để ảnh chụp phòng và thành viên nhất quán.
-  const result = await db.query(`SELECT r.code,r.host_id,r.bot_count,r.role_state,r.capacity,
+  const result = await db.query(`SELECT r.code,r.host_id,r.bot_count,r.role_state,r.capacity,r.role_config,
     json_agg(json_build_object('id',u.id,'username',u.username,'ready',m.ready)
       ORDER BY m.joined_at,m.user_id) AS members
     FROM ww_room_members mine JOIN ww_rooms r ON r.code=mine.room_code
@@ -26,7 +26,7 @@ async function currentRoom(db, userId) {
     id: -(index + 1), username: "Bot " + (index + 1), ready: true, bot: true
   }));
   return {
-    code: row.code, host_id: row.host_id, capacity: MAX_PLAYERS,
+    code: row.code, host_id: row.host_id, capacity: MAX_PLAYERS, roleConfig: row.role_config,
     members: [...row.members, ...bots],
     game: privateRoleView(game, userId),
     wolfChat: readWolfChat(game, userId)
@@ -38,7 +38,7 @@ export function createRooms(pool) {
     const actions = {
       "/api/rooms/current": "GET", "/api/rooms/create": "POST",
       "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST",
-      "/api/rooms/bots": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
+      "/api/rooms/bots": "POST", "/api/rooms/config": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
     if (!actions[pathname]) return json(response, 404, { error: "Không có API phòng này." });
     if (request.method !== actions[pathname]) return json(response, 405, { error: "Phương thức không hợp lệ." });
@@ -97,7 +97,7 @@ export function createRooms(pool) {
         if (!code) throw fault(404, "Bạn chưa ở trong phòng.");
         const room = await client.query("SELECT host_id,role_state FROM ww_rooms WHERE code=$1 FOR UPDATE", [code]);
         if (!room.rows.length) throw fault(404, "Phòng không còn tồn tại.");
-        if (["/api/rooms/bots", "/api/rooms/start", "/api/rooms/reset"].includes(pathname)) {
+        if (["/api/rooms/bots", "/api/rooms/config", "/api/rooms/start", "/api/rooms/reset"].includes(pathname)) {
           if (room.rows[0].host_id !== user.id) throw fault(403, "Chỉ chủ phòng được thực hiện thao tác này.");
           if (pathname.endsWith("/reset")) {
             await client.query("UPDATE ww_rooms SET role_state=NULL WHERE code=$1", [code]);
@@ -106,7 +106,13 @@ export function createRooms(pool) {
           } else {
             if (room.rows[0].role_state) throw fault(409, "Phòng đã chia vai. Quay lại phòng chờ trước.");
             const current = await currentRoom(client, user.id);
-            if (pathname.endsWith("/bots")) {
+            if (pathname.endsWith("/config")) {
+              let counts;
+              try { counts = validateRoles(body.roles, current.members.length); }
+              catch (error) { throw fault(400, error.message); }
+              await client.query("UPDATE ww_rooms SET role_config=$1 WHERE code=$2", [JSON.stringify(counts), code]);
+              await client.query("UPDATE ww_room_members SET ready=FALSE WHERE room_code=$1", [code]);
+            } else if (pathname.endsWith("/bots")) {
               if (typeof body.fill !== "boolean") throw fault(400, "Yêu cầu bot không hợp lệ.");
               const humans = current.members.filter(member => !member.bot).length;
               if (body.fill && current.members.length >= current.capacity) throw fault(409, "Phòng đã đầy, không thể thêm bot.");
@@ -114,7 +120,11 @@ export function createRooms(pool) {
               await client.query("UPDATE ww_rooms SET bot_count=$1 WHERE code=$2", [body.fill ? bots + 1 : 0, code]);
             } else {
               if (!canStartRoom(current.members, current.capacity)) throw fault(409, "Cần ít nhất 5 người và tất cả người thật sẵn sàng.");
-              const game = beginGame(dealRoles(current.members), current.members);
+              let deal;
+              if (!current.roleConfig) throw fault(400, "Chủ phòng cần lưu bộ vai trước khi bắt đầu.");
+              try { deal = dealRoles(current.members, current.roleConfig); }
+              catch (error) { throw fault(400, error.message); }
+              const game = beginGame(deal, current.members);
               forgetResult(code);
               await persistGame(client, code, game);
             }

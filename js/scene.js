@@ -55,7 +55,7 @@ export function createScene(sceneElement, onPlayerClick) {
         sceneElement.append(button);
       }
       const selected = player.id === state.selectedPlayerId;
-      const asleep = state.sleeping && !(state.phase === "night" && ["wolf", "seer", "guard"].includes(player.role)) && !(state.phase === "witch" && player.role === "witch");
+      const asleep = state.sleeping && ({ night: "wolf", guard: "guard", seer: "seer", witch: "witch" }[state.phase] !== player.role);
       button.classList.toggle("selected", selected);
       button.classList.toggle("target", player.id === selectedTarget);
       button.classList.toggle("eliminated", !player.alive);
@@ -70,7 +70,7 @@ export function createScene(sceneElement, onPlayerClick) {
       button.style.setProperty("--delay", -player.id * 0.2 + "s");
       const character = Number.isInteger(player.character) && player.character >= 0 && player.character < SPRITES.length ? player.character : seat;
       button.style.setProperty("--char-sprite", `url("${getCharacterSprite(character)}")`);
-      const labels = { wolf: "Sói", seer: "Tiên tri", guard: "Bảo vệ", witch: "Phù thủy", villager: "Dân" };
+      const labels = { wolf: "Sói", seer: "Tiên tri", guard: "Bảo vệ", witch: "Phù thủy", villager: "Dân", hunter: "Thợ săn", idiot: "Thằng ngu" };
       button.querySelector(".name").textContent = state.showRoles || state.phase === "ended"
         ? player.name + " · " + (labels[player.role] || "Chưa rõ") : player.name;
       button.title = player.name;

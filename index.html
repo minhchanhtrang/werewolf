@@ -218,11 +218,13 @@
             </div>
             <div class="role-card-intro__body">
               <h3>🧙 Phù thủy</h3>
-              <p>Có 1 bình cứu và 1 bình độc cho cả ván. Mỗi đêm dùng tối đa 1 bình. Bình độc không bị Bảo vệ chặn.</p>
+              <p>Có 1 bình cứu và 1 bình độc cho cả ván, được dùng cả hai trong cùng đêm. Cứu nạn nhân Sói mà không biết danh tính. Độc xuyên Bảo vệ.</p>
               <span class="role-tag role-tag--good">Phe Dân</span>
             </div>
           </article>
 
+          <article class="role-card-intro"><div class="role-card-intro__body"><h3>Thợ săn</h3><p>Bị Sói giết hoặc treo cổ được bắn một người trong 20 giây. Trúng độc, tự sát hay rời ván không được bắn.</p><span class="role-tag role-tag--good">Phe Dân</span></div></article>
+          <article class="role-card-intro"><div class="role-card-intro__body"><h3>Thằng ngu</h3><p>Thuộc phe thứ ba. Khiến cả làng bỏ phiếu loại mình để giành chiến thắng riêng. Chết vì Sói, độc hay đạn sẽ không thắng.</p><span class="role-tag">Phe thứ ba</span></div></article>
           <article class="role-card-intro role-villager">
             <div class="role-card-intro__img">
               <img src="/assets/role/role-villager.png" alt="" width="200" height="200" loading="lazy">
@@ -276,40 +278,44 @@
   </nav>
 
   <div class="s-waiting__body">
+    <aside class="waiting-sidebar">
     <div class="s-waiting__code-card">
       <span class="eyebrow">MÃ PHÒNG</span>
       <div class="waiting-code" id="roomCode-waiting-display">——————</div>
       <button class="btn btn--ghost btn--sm" id="copyRoomCode-waiting" type="button">📋 Sao chép mã phòng</button>
       <p id="copyRoomStatus-waiting" class="hint" role="status"></p>
     </div>
+    <section id="botTools" class="waiting-tools card" aria-label="Công cụ chủ phòng">
+      <p class="eyebrow">QUẢN LÝ PHÒNG</p>
+      <button class="btn btn--ghost btn--sm" id="fillBots" hidden>Thêm 1 bot</button>
+      <button class="btn btn--ghost btn--sm" id="removeBots" hidden>Xóa bot</button>
+    </section>
+    <div class="waiting-tools">
+      <button class="btn btn--danger btn--sm" id="leaveRoom-waiting">Rời phòng</button>
+      <button class="btn btn--ghost btn--sm" id="resetRoom-waiting" hidden>Về phòng chờ</button>
+    </div>
+    </aside>
 
-    <section class="s-waiting__section card" id="waitingRoom" aria-labelledby="waitingHeading">
-      <div class="room-bar">
-        <h2 id="waitingHeading">Thành viên phòng</h2>
-        <strong id="roomCount-waiting" class="room-count"></strong>
-      </div>
-      <p id="waitingRules" class="hint"></p>
-      <p id="readyCount" class="ready-count"></p>
-
-      <ol id="roomMembers" class="room-members" aria-label="Thành viên phòng"></ol>
-
-      <div class="tool-buttons s-waiting__actions">
-        <button class="btn btn--primary" id="readyRoom" aria-pressed="false">✅ Sẵn sàng</button>
-        <button class="btn btn--primary" id="startRoom" hidden>🚀 Bắt đầu ván</button>
-      </div>
-
-      <details id="botTools" class="subtle-details">
-        <summary>🤖 Thêm bot chơi thử</summary>
-        <div class="tool-buttons">
-          <button class="btn btn--ghost btn--sm" id="fillBots" hidden>Thêm 1 bot</button>
-          <button class="btn btn--ghost btn--sm" id="removeBots" hidden>Xóa bot</button>
+    <section class="s-waiting__section" id="waitingRoom" aria-labelledby="waitingHeading">
+      <div class="waiting-main-header card">
+        <div><p class="eyebrow">TRƯỚC GIỜ TRĂNG LÊN</p><h2 id="waitingHeading">Chuẩn bị vào làng</h2><p id="readyCount" class="ready-count"></p></div>
+        <div class="tool-buttons s-waiting__actions">
+          <button class="btn btn--primary" id="readyRoom" aria-pressed="false">Sẵn sàng</button>
+          <button class="btn btn--gold" id="startRoom" hidden>Vào game</button>
         </div>
-      </details>
-
-      <div class="tool-buttons s-waiting__leave">
-        <button class="btn btn--danger btn--sm" id="leaveRoom-waiting">🚪 Rời phòng</button>
-        <button class="btn btn--ghost btn--sm" id="resetRoom-waiting" hidden>↩ Kết thúc ván / Về phòng chờ</button>
       </div>
+      <form id="roleConfigForm" class="role-config card">
+        <div class="room-bar"><h3>Bộ bài của ngôi làng</h3><span class="eyebrow">CHỦ PHÒNG CHỌN VAI</span></div>
+        <p class="hint">Chọn số lượng dưới mỗi lá bài. Tổng vai phải bằng số người; vai đặc biệt tối đa 1 mỗi loại.</p>
+        <div id="roleConfigFields" class="role-config__fields"></div>
+        <p id="waitingRules" class="hint"></p>
+        <button id="saveRoleConfig" type="submit" class="btn btn--gold btn--sm">Lưu bộ vai</button>
+        <p id="roleConfigStatus" class="hint" role="status"></p>
+      </form>
+      <section class="waiting-roster card" aria-label="Người trong phòng">
+        <div class="room-bar"><h3>Những người đã có mặt</h3><strong id="roomCount-waiting" class="room-count"></strong></div>
+        <ol id="roomMembers" class="room-members" aria-label="Thành viên phòng"></ol>
+      </section>
 
       <p id="roomMessage-waiting" class="form-msg" role="status" aria-live="polite"></p>
     </section>
@@ -444,10 +450,13 @@
         <p id="onlineActionStatus" class="hud-action-text" role="status"></p>
         <p id="onlineTeam" class="hud-team-text"></p>
         <p id="onlineSeer" class="hud-seer-text"></p>
+        <p id="gameActionError" role="status"></p>
       </div>
 
       <!-- Khung tương tác chính: Chọn mục tiêu & Gửi hành động -->
       <div class="game-hud-controls">
+        <button id="blankVote" type="button" class="btn btn--ghost btn--sm" hidden>Phiếu trắng</button>
+        <button id="hunterSkip" type="button" class="btn btn--ghost btn--sm" hidden>Bỏ phát bắn</button>
         <form id="onlineActionForm" class="hud-action-form">
           <label for="onlineTarget" class="hud-target-label">Mục tiêu:</label>
           <select id="onlineTarget" class="hud-select"></select>
@@ -467,6 +476,7 @@
 
       <!-- Nút rời phòng nằm cố định ở góc bên phải góc dưới -->
       <div class="game-hud-leave">
+        <button id="suicideGame" class="btn btn--danger btn--sm" type="button">Sói tự kết liễu</button>
         <button class="btn btn--danger btn--sm" id="leaveRoom-game" type="button" title="Rời khỏi phòng">🚪 Rời phòng</button>
       </div>
 
@@ -474,6 +484,7 @@
     </div>
   </footer>
 
+  <aside id="wolfChoices" class="wolf-choices" hidden aria-label="Mục tiêu của phe Sói"><strong>Sói đang chọn</strong><ul id="wolfChoicesList"></ul></aside>
   <details id="wolfChat" class="wolf-chat" hidden>
     <summary>Chat Sói <span id="wolfChatCount"></span><span class="wolf-chat__private">Riêng</span></summary>
     <ol id="wolfChatMessages" aria-label="Tin nhắn riêng giữa Sói còn sống"></ol>

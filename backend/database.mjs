@@ -37,6 +37,7 @@ export async function initializeDatabase(pool) {
     CREATE INDEX IF NOT EXISTS ww_room_members_room_idx ON ww_room_members(room_code);
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS bot_count INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS role_state JSONB;
+    ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS role_config JSONB;
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS capacity INTEGER NOT NULL DEFAULT 10 CHECK (capacity BETWEEN 5 AND 20);
     -- Xóa bảng của các tính năng lưu ván và chat đã bỏ.
     DROP TABLE IF EXISTS ww_saves;

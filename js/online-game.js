@@ -1,6 +1,8 @@
 import { createScene } from "./scene.js";
+import { ROLE_LABELS } from "./rules.js";
 
-const phases = { voting: "Bỏ phiếu", revealed: "Công bố phiếu", night: "Ban đêm", witch: "Lượt Phù thủy", dawn: "Bình minh", ended: "Kết thúc" };
+const phases = { voting: "Làng họp bàn", revealed: "Mở phiếu", guard: "Bảo vệ đang che chở", night: "Sói đang đi săn", seer: "Tiên tri đang soi", witch: "Phù thủy đang pha thuốc", hunter: "Phát súng cuối cùng", dawn: "Bình minh ló rạng", ended: "Kết thúc" };
+const isNight = phase => ["guard", "night", "seer", "witch"].includes(phase);
 
 export function createOnlineGame(onAction) {
   const panel = document.querySelector("#onlineGame");
@@ -32,8 +34,16 @@ export function createOnlineGame(onAction) {
   const healButton = document.querySelector("#witchHeal");
   const poisonButton = document.querySelector("#witchPoison");
   const skipButton = document.querySelector("#witchSkip");
+  const blankButton = document.querySelector("#blankVote");
+  const suicideButton = document.querySelector("#suicideGame");
+  const hunterSkip = document.querySelector("#hunterSkip");
+  blankButton.addEventListener("click", () => { if (!blankButton.disabled) onAction(null, "blank"); });
+  hunterSkip.addEventListener("click", () => { if (!hunterSkip.disabled) onAction(null, "skip"); });
+  suicideButton.addEventListener("click", () => {
+    if (!suicideButton.disabled && confirm("Tự sát sẽ loại bạn khỏi ván và không thể hoàn tác. Tiếp tục?")) onAction(null, "suicide");
+  });
   healButton.addEventListener("click", () => {
-    if (!healButton.disabled && current?.witch?.victimId != null) onAction(current.witch.victimId, "heal");
+    if (!healButton.disabled && current?.witch?.canHeal) onAction(null, "heal");
   });
   poisonButton.addEventListener("click", () => {
     if (poisonButton.disabled) return;
@@ -44,11 +54,6 @@ export function createOnlineGame(onAction) {
     if (!skipButton.disabled) onAction(null, "skip");
   });
   const scene = createScene(document.querySelector("#onlineScene"), targetId => {
-    if (current?.phase === "witch" && eligible.some(player => player.id === targetId) && !button.disabled) {
-      target.value = String(targetId);
-      target.focus({ preventScroll: true });
-      return;
-    }
     if (eligible.some(player => player.id === targetId) && !button.disabled) onAction(targetId, current?.phase === "witch" ? "poison" : undefined);
   });
   document.querySelector("#onlineActionForm").addEventListener("submit", event => {
@@ -62,6 +67,7 @@ export function createOnlineGame(onAction) {
     if (seconds === 0) {
       button.disabled = true;
       for (const control of [healButton, poisonButton, skipButton]) control.disabled = true;
+      blankButton.disabled = hunterSkip.disabled = true;
     }
   }
   setInterval(updateTimer, 250);
@@ -106,7 +112,7 @@ export function createOnlineGame(onAction) {
     const phaseKey = identity + ":" + game.phaseId;
     if (potionPhase !== phaseKey) { poisonMode = false; potionPhase = phaseKey; }
     if (phaseKey !== noticeKey) {
-      document.querySelector("#phaseNoticeHeading").textContent = (["night", "witch"].includes(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
+      document.querySelector("#phaseNoticeHeading").textContent = (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
       document.querySelector("#phaseNoticeText").textContent = game.phaseNotice || game.history.at(-1)?.text || "Ván đã bắt đầu. Hãy xem vai và chọn hành động theo lượt.";
       notice.hidden = false;
       noticeKey = phaseKey;
@@ -115,12 +121,12 @@ export function createOnlineGame(onAction) {
     if (game.phase === "ended") {
       const key = JSON.stringify([game.winner, game.roster]);
       if (key !== resultKey) {
-        document.querySelector("#resultHeading").textContent = game.winner === "wolves" ? "Phe Sói chiến thắng" : "Phe Dân chiến thắng";
-        document.querySelector("#resultSummary").textContent = game.winner === "wolves"
+        document.querySelector("#resultHeading").textContent = game.winner === "idiot" ? "Thằng ngu chiến thắng" : game.winner === "wolves" ? "Phe Sói chiến thắng" : "Phe Dân chiến thắng";
+        document.querySelector("#resultSummary").textContent = game.winner === "idiot" ? "Cả làng đã bỏ phiếu loại Thằng ngu. Phe thứ ba giành chiến thắng riêng!" : game.winner === "wolves"
           ? "Số Sói còn sống đã bằng hoặc vượt số người phe Dân."
           : "Tất cả Ma sói đã bị loại khỏi làng.";
         resultPlayers.replaceChildren();
-        const roles = { wolf: "Ma sói", seer: "Tiên tri", guard: "Bảo vệ", witch: "Phù thủy", villager: "Dân làng" };
+        const roles = ROLE_LABELS;
         game.roster.forEach(player => {
           const item = document.createElement("li");
           const name = document.createElement("strong");
@@ -137,21 +143,15 @@ export function createOnlineGame(onAction) {
       resultPlayers.replaceChildren();
       resultKey = "";
     }
-    const nightGuides = {
-      wolf: "Chọn một người phe Dân để tấn công. Nếu các Sói chọn khác nhau và hòa, đêm đó không có nạn nhân.",
-      seer: "Chọn một người để soi. Bạn chỉ soi một lần mỗi đêm; kết quả chỉ mình bạn thấy.",
-      guard: "Chọn một người để bảo vệ. Có thể tự bảo vệ, nhưng không lặp mục tiêu đêm trước.",
-      witch: "Chờ lượt Phù thủy sau lượt Sói. Có 1 bình cứu và 1 bình độc cho cả ván, mỗi đêm tối đa 1 bình.",
-      villager: "Bạn đang ngủ. Chờ bình minh để tiếp tục thảo luận."
-    };
     guide.textContent = game.phase === "ended" ? "Vai của tất cả người chơi đã được công khai."
-      : !me?.alive ? "Bạn đang theo dõi ván. Hãy trò chuyện trong kênh người đã bị loại."
+      : game.hunterTurn ? "Chọn một nhân vật để bắn hoặc bỏ phát bắn."
+      : !me?.alive ? "Bạn đang theo dõi ván."
       : game.phase === "voting" ? "Thảo luận rồi bấm một nhân vật hoặc chọn trong danh sách để bỏ phiếu kín. Có thể đổi phiếu trước khi hết giờ."
-      : game.phase === "night" ? nightGuides[game.myRole] || "Chờ bình minh."
-      : game.phase === "witch" ? "Phù thủy có 20 giây để dùng bình cứu, bình độc hoặc bỏ lượt. Những người khác chờ bình minh."
+      : ["night", "guard", "seer"].includes(game.phase) ? "Chỉ người có vai được gọi mới hành động. Mỗi lượt vẫn chạy đủ giờ dù vai đó đã chết."
+      : game.phase === "witch" ? "Phù thủy có 30 giây, được dùng cả hai bình trong đêm. Những người khác chờ bình minh."
       : game.phase === "revealed" ? "Phiếu đã được công bố. Hòa phiếu thì không loại ai; đêm sẽ tự bắt đầu."
       : "Đọc kết quả đêm trong diễn biến. Lượt bỏ phiếu tiếp theo sẽ tự bắt đầu.";
-    document.querySelector("#onlinePhase").textContent = (["night", "witch"].includes(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
+    document.querySelector("#onlinePhase").textContent = (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
     document.querySelector("#onlineLiving").textContent = game.roster.filter(player => player.alive).length + "/" + game.roster.length + " còn sống";
     document.querySelector("#onlineSeer").textContent = game.seerResult ? "Kết quả soi riêng · Đêm " + game.seerResult.day + ": " + game.seerResult.text : "";
     document.querySelector("#onlineTeam").textContent = game.myRole === "wolf"
@@ -160,21 +160,24 @@ export function createOnlineGame(onAction) {
     let text;
     let label = "Gửi lựa chọn";
     if (game.phase === "ended") {
-      text = game.winner === "wolves" ? "Phe Sói chiến thắng. Các vai đã được công bố." : "Phe Dân chiến thắng. Các vai đã được công bố.";
+      text = (game.winner === "idiot" ? "Thằng ngu chiến thắng riêng." : game.winner === "wolves" ? "Phe Sói chiến thắng." : "Phe Dân chiến thắng.") + " Các vai đã được công bố.";
+    } else if (game.hunterTurn) {
+      eligible = game.roster.filter(player => player.alive);
+      label = "Bắn mục tiêu"; text = "Nhấp một người để bắn, hoặc bỏ phát bắn.";
     } else if (!me?.alive) text = "Bạn đã bị loại. Bạn có thể theo dõi đến hết ván.";
     else if (game.phase === "voting") {
-      eligible = game.roster.filter(player => player.alive && player.id !== id);
+      eligible = game.canVote ? game.roster.filter(player => player.alive && player.id !== id) : [];
       label = game.myVote === null ? "Bỏ phiếu" : "Đổi phiếu";
-      text = "Đã ghi nhận " + game.voteCount + " phiếu. " + (game.myVote === null ? "Chọn một người hoặc chờ hết giờ để bỏ lượt." : "Phiếu của bạn: " + game.roster.find(player => player.id === game.myVote)?.name + ". Chưa công khai với người khác.");
+      text = !game.canVote ? "Bạn đã mất quyền bỏ phiếu. Vẫn có thể thảo luận." : "Đã ghi nhận " + game.voteCount + " phiếu. " + (game.hasVoted ? game.myVote === null ? "Bạn đã bỏ phiếu trắng." : "Bạn chọn: " + game.roster.find(player => player.id === game.myVote)?.name : "Nhấp nhân vật hoặc chọn phiếu trắng.") + " Tất cả đã vote thì còn tối đa 5 giây.";
     } else if (game.phase === "witch" && game.myRole === "witch") {
-      text = game.witch?.choice ? "Đã chốt lựa chọn. Chờ bình minh." : "Dùng tối đa một bình hoặc bỏ lượt. Không bấm gì thì giữ nguyên các bình.";
-      if (poisonMode && game.witch?.poison && !game.witch.choice) {
+      text = game.witch?.choice?.done ? "Đã bỏ lượt còn lại. Chờ bình minh." : "Có thể dùng cả hai bình trong đêm. Bình không dùng sẽ được giữ lại.";
+      if (poisonMode && game.witch?.poison && !game.witch.choice?.poisonId && !game.witch.choice?.done) {
         eligible = game.roster.filter(player => player.alive && player.id !== id);
         label = "Dùng bình độc";
         text = "Chọn mục tiêu rồi xác nhận dùng bình độc. Lựa chọn sẽ không thể đổi.";
       }
     } else if (game.phase === "witch") text = "Đang chờ Phù thủy. Hãy chờ bình minh.";
-    else if (game.phase === "night" && ["wolf", "seer", "guard"].includes(game.myRole)) {
+    else if (({ guard: "guard", night: "wolf", seer: "seer" }[game.phase]) === game.myRole) {
       eligible = game.roster.filter(player => player.alive && (game.myRole === "wolf" ? !game.wolfIds.includes(player.id) : game.myRole === "seer" ? player.id !== id : player.id !== game.previousGuardTargetId));
       label = { wolf: "Chọn nạn nhân", seer: "Soi người", guard: "Bảo vệ" }[game.myRole];
       text = game.myAction === null ? "Chọn mục tiêu, hoặc chờ hết giờ để bỏ lượt." : "Đã ghi nhận lựa chọn của bạn.";
@@ -187,18 +190,28 @@ export function createOnlineGame(onAction) {
     else text = "Kết quả đã công bố. Server sẽ tự chuyển pha khi hết giờ.";
     status.textContent = text;
     witchPanel.hidden = !(game.phase === "witch" && game.myRole === "witch" && me?.alive);
-    const victim = game.roster.find(player => player.id === game.witch?.victimId && player.alive);
     document.querySelector("#witchStatus").textContent = witchPanel.hidden ? "" :
       "Bình cứu: " + (game.witch?.heal ? "1" : "0") + " · Bình độc: " + (game.witch?.poison ? "1" : "0") + ". "
-      + (victim ? victim.name + " đang bị Sói tấn công." : "Không có người cần cứu.");
-    const potionsLocked = busy || witchPanel.hidden || Boolean(game.witch?.choice);
-    healButton.disabled = potionsLocked || !game.witch?.heal || !victim;
-    poisonButton.disabled = potionsLocked || !game.witch?.poison;
+      + (game.witch?.choice?.heal ? "Đã dùng bình cứu. " : game.witch?.canHeal ? "Đêm nay có người bị Sói tấn công. Bạn có muốn cứu không? " : "Không có mục tiêu có thể cứu. ")
+      + (game.witch?.choice?.poisonId ? "Đã dùng bình độc." : "");
+    const potionsLocked = busy || witchPanel.hidden || Boolean(game.witch?.choice?.done);
+    healButton.disabled = potionsLocked || !game.witch?.canHeal;
+    poisonButton.disabled = potionsLocked || !game.witch?.poison || game.witch?.choice?.poisonId != null;
     skipButton.disabled = potionsLocked;
     poisonButton.textContent = poisonMode ? "Hủy chọn bình độc" : "Chọn bình độc";
     button.textContent = label;
     button.disabled = busy || eligible.length === 0;
     target.disabled = busy || eligible.length === 0;
+    blankButton.hidden = game.phase !== "voting" || !game.canVote;
+    blankButton.disabled = busy;
+    hunterSkip.hidden = !game.hunterTurn; hunterSkip.disabled = busy;
+    suicideButton.hidden = game.myRole !== "wolf" || !me?.alive || game.phase === "ended"; suicideButton.disabled = busy;
+    const choices = document.querySelector("#wolfChoices");
+    choices.hidden = !game.wolfChoices?.length;
+    const choiceList = document.querySelector("#wolfChoicesList"); choiceList.replaceChildren();
+    for (const wolf of game.wolfChoices || []) {
+      const item = document.createElement("li"); item.textContent = wolf.name + " → " + (wolf.targetName || "Chưa chọn"); choiceList.append(item);
+    }
     document.querySelector("#onlineActionForm").hidden = eligible.length === 0;
     const key = JSON.stringify([game.phaseId, eligible.map(player => [player.id, player.name])]);
     if (key !== optionsKey) {
@@ -218,10 +231,10 @@ export function createOnlineGame(onAction) {
         return { ...player, role: game.phase === "ended" ? player.role : player.id === id ? game.myRole : "unknown", x: 50 + Math.cos(angle) * 25, y: 61 + Math.sin(angle) * 18 };
       });
       scene.render(roster, {
-        phase: game.phase, sleeping: ["night", "witch"].includes(game.phase), showRoles: false,
+        phase: game.phase, sleeping: isNight(game.phase), showRoles: false,
         selectedPlayerId: userId, votes: new Map(game.revealedVotes)
       });
-      document.querySelector("#onlineScene").classList.toggle("night", ["night", "witch"].includes(game.phase));
+      document.querySelector("#onlineScene").classList.toggle("night", isNight(game.phase));
       sceneKey = presentation;
     }
     history.replaceChildren();

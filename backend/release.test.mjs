@@ -13,23 +13,24 @@ function fixture() {
 const next = game => advanceGame(game, game.deadline);
 const action = (game, id, targetId, kind) => act(game, id, { phaseId: game.phaseId, targetId, kind });
 
-test("Bắt đầu Đêm 1; cứu bản thân, không dùng hai bình cùng đêm", () => {
+test("Bắt đầu Đêm 1 theo lượt; Phù thủy có thể tự cứu", () => {
   const game = fixture();
-  assert.equal(game.phase, "night");
+  assert.equal(game.phase, "guard"); next(game);
   action(game, 1, 3); next(game);
+  assert.equal(game.phase, "seer"); next(game);
   assert.equal(game.phase, "witch");
-  assert.equal(gameView(game, 3).witch.victimId, 3);
+  assert.equal(gameView(game, 3).witch.canHeal, true);
   assert.equal(gameView(game, 2).witch, null);
   action(game, 3, 3, "heal");
-  assert.throws(() => action(game, 3, 1, "poison"));
+  assert.throws(() => action(game, 3, 3, "heal"));
   next(game); assert.ok(game.players[2].alive); assert.equal(game.witchPotions.heal, false);
   assert.equal(game.phase, "dawn"); next(game);
   assert.equal(game.phase, "voting"); assert.equal(game.day, 1);
-  next(game); next(game); assert.equal(game.phase, "night"); assert.equal(game.day, 2);
+  next(game); next(game); assert.equal(game.phase, "guard"); assert.equal(game.day, 2);
 });
 
 test("Bình độc xuyên bảo vệ; Sói tấn công và bình độc giải quyết đồng thời", () => {
-  const game = fixture(); action(game, 1, 5); action(game, 4, 6); next(game);
+  const game = fixture(); action(game, 4, 6); next(game); action(game, 1, 5); next(game); next(game);
   action(game, 3, 6, "poison"); next(game);
   assert.equal(game.players[4].alive, false); assert.equal(game.players[5].alive, false);
   assert.equal(game.witchPotions.poison, false);

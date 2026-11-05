@@ -1,9 +1,9 @@
 import { randomInt } from "node:crypto";
 import { gameView } from "./game.mjs";
-import { roleCounts } from "../js/rules.js";
+import { roleCounts, validateRoles } from "../js/rules.js";
 
-export function dealRoles(members) {
-  const counts = roleCounts(members.length);
+export function dealRoles(members, customCounts) {
+  const counts = customCounts ? validateRoles(customCounts, members.length) : roleCounts(members.length);
   const roles = Object.entries(counts).flatMap(([role, count]) => Array(count).fill(role));
   for (let i = roles.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);

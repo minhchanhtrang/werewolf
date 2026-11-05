@@ -54,6 +54,9 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
     const added=await api(0,"bots",{fill:true});
     assert.equal(added.data.room.members.filter(m=>m.bot).length,i+1);
   }
+  assert.equal((await api(1,"config",{roles:{wolf:1,witch:1,villager:3}})).status,403);
+  assert.equal((await api(0,"config",{roles:{wolf:1,villager:2}})).status,400);
+  assert.equal((await api(0,"config",{roles:{wolf:1,witch:1,villager:3}})).status,200);
   assert.equal((await api(0,"ready",{ready:true})).status,200);
   assert.equal((await api(0,"start",{})).status,409);
   await api(1,"ready",{ready:true});
@@ -61,7 +64,7 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   const started=await api(0,"start",{});
   assert.equal(started.status,200);
   assert.equal(started.data.room.game.roster.length,5);
-  assert.equal(started.data.room.game.phase,"night");
+  assert.equal(started.data.room.game.phase,"guard");
   const secret=(await pool.query("SELECT role_state FROM ww_rooms WHERE code=$1",[code])).rows[0].role_state;
   assert.equal(secret.players.filter(p=>p.role==="witch").length,1);
   assert.equal(secret.players.filter(p=>p.role==="wolf").length,1);

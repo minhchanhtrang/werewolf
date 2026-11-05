@@ -5,7 +5,7 @@
 import { authState } from "./auth.js";
 import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
-import { MIN_PLAYERS, MAX_PLAYERS, describeRoles, canStartRoom } from "./rules.js";
+import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
 
@@ -81,6 +81,36 @@ let busy = false;
 let generation = 0;
 let controller = null;
 let revision = "";
+const roleFields = document.querySelector("#roleConfigFields");
+let configKey = "";
+for (const [role, label] of Object.entries(ROLE_LABELS)) {
+  const field = document.createElement("label"); field.className = "waiting-role-card";
+  const artwork = document.createElement("div"); artwork.className = "waiting-role-card__art";
+  if (["hunter", "idiot"].includes(role)) {
+    artwork.textContent = role === "hunter" ? "🏹" : "🃏";
+    artwork.classList.add("waiting-role-card__art--" + role);
+  } else {
+    const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
+    image.alt = ""; image.loading = "lazy"; artwork.append(image);
+  }
+  const name = document.createElement("strong"); name.textContent = label;
+  const team = document.createElement("span"); team.className = "waiting-role-card__team";
+  team.textContent = role === "idiot" ? "Phe thứ ba" : role === "wolf" ? "Phe Sói" : "Phe Dân";
+  const quantity = document.createElement("span"); quantity.textContent = "Số lượng";
+  field.append(artwork, name, team, quantity);
+  const input = document.createElement("input"); input.type = "number"; input.min = "0";
+  input.max = ["wolf", "villager"].includes(role) ? "20" : "1"; input.step = "1";
+  input.name = role; input.value = "0"; input.required = true; field.append(input); roleFields.append(field);
+  input.setAttribute("aria-label", "Số lượng " + label);
+}
+document.querySelector("#roleConfigForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const roles = Object.fromEntries([...roleFields.querySelectorAll("input")].map(input => [input.name, Number(input.value)]));
+  try {
+    validateRoles(roles, room.members.length);
+    await update("config", { roles });
+  } catch (error) { document.querySelector("#roleConfigStatus").textContent = error.message; }
+});
 const renderWolfChat = createWolfChat(body => update("wolf-chat", body));
 
 const renderGame = createOnlineGame((targetId, kind) => {
@@ -257,33 +287,47 @@ function render() {
 
   const capacity = room.capacity ?? MAX_PLAYERS;
   const count    = room.members.length;
+  const host = room.host_id === user?.id;
+  const nextConfigKey = JSON.stringify([room.code, room.roleConfig]);
+  if (configKey !== nextConfigKey) {
+    for (const input of roleFields.querySelectorAll("input")) input.value = room.roleConfig?.[input.name] ?? 0;
+    configKey = nextConfigKey;
+  }
+  for (const input of roleFields.querySelectorAll("input")) input.disabled = !host || busy || dealt;
+  document.querySelector("#saveRoleConfig").hidden = !host;
+  document.querySelector("#saveRoleConfig").disabled = busy || dealt;
+  let validConfig = false;
+  try { validateRoles(room.roleConfig, count); validConfig = true; } catch {}
+  document.querySelector("#roleConfigStatus").textContent = validConfig ? "Bộ vai đã lưu. Mọi người hãy sẵn sàng." : "Chủ phòng cần lưu bộ vai có tổng bằng " + count + " người.";
 
   document.querySelector("#waitingRules").textContent = count < MIN_PLAYERS
     ? "Cần thêm " + (MIN_PLAYERS - count) + " người để có thể bắt đầu."
-    : "Nếu bắt đầu với " + count + " người: " + describeRoles(count);
+    : room.roleConfig ? Object.entries(room.roleConfig).filter(([, n]) => n).map(([r,n]) => n + " " + ROLE_LABELS[r]).join(" · ") : "Chủ phòng hãy chọn bộ vai bên dưới.";
 
   fillBots.textContent   = "Thêm 1 bot";
-  startRoom.disabled     = busy || !canStartRoom(room.members, capacity);
+  startRoom.disabled     = busy || !validConfig || !canStartRoom(room.members, capacity);
   fillBots.disabled      = busy || room.members.length >= capacity;
   removeBots.disabled    = busy || !room.members.some(member => member.bot);
 
   if (room.game) {
     const labels = {
       wolf: "Ma sói", seer: "Tiên tri", guard: "Bảo vệ",
-      witch: "Phù thủy", villager: "Dân làng"
+      witch: "Phù thủy", villager: "Dân làng", hunter: "Thợ săn", idiot: "Thằng ngu"
     };
     const descriptions = {
       wolf:     "Bạn thuộc phe Sói.",
       seer:     "Bạn thuộc phe Dân, có khả năng soi người vào ban đêm.",
       guard:    "Bạn thuộc phe Dân, có khả năng bảo vệ vào ban đêm.",
-      witch:    "Bạn thuộc phe Dân. Có 1 bình cứu và 1 bình độc cho cả ván; mỗi đêm dùng tối đa 1 bình. Được tự cứu. Bình độc không bị Bảo vệ chặn. Chờ lượt Phù thủy sau lượt Sói để hành động.",
+      witch:    "Bạn thuộc phe Dân. Có 1 bình cứu và 1 bình độc cho cả ván, được dùng cả hai trong cùng đêm. Cứu nạn nhân Sói mà không biết danh tính. Bình độc xuyên bảo vệ.",
+      hunter: "Phe Dân. Khi bị Sói giết hoặc treo cổ, được bắn một người. Trúng độc, tự sát hoặc rời ván không được bắn.",
+      idiot: "Bạn thuộc phe thứ ba. Hãy khiến cả làng bỏ phiếu loại mình để thắng ngay. Chết bởi Sói, độc hay đạn không được tính là chiến thắng.",
       villager: "Bạn thuộc phe Dân, tìm Sói qua thảo luận và bỏ phiếu."
     };
     document.querySelector("#myRole").textContent          = labels[room.game.myRole] || "Chưa có vai";
     document.querySelector("#roleDescription").textContent = descriptions[room.game.myRole] || "";
     const role = room.game.myRole;
     if (Object.hasOwn(labels, role)) {
-      const portrait = "/assets/role/role-" + role + ".png";
+      const portrait = "/assets/role/role-" + (["hunter", "idiot"].includes(role) ? "villager" : role) + ".png";
       if (rolePortrait.getAttribute("src") !== portrait) rolePortrait.src = portrait;
     } else {
       rolePortrait.removeAttribute("src");
@@ -358,11 +402,15 @@ async function update(action = "current", body) {
       render();
     }
     message.textContent = "";
+    document.querySelector("#roomMessage-waiting").textContent = "";
+    document.querySelector("#gameActionError").textContent = "";
     return true;
   } catch (error) {
     if (version === generation && error.name !== "AbortError") {
       message.textContent = error.message
         + (!error.status || error.status >= 500 ? " Hệ thống sẽ tự thử kết nối lại." : "");
+      document.querySelector("#roomMessage-waiting").textContent = error.message;
+      document.querySelector("#gameActionError").textContent = error.message;
     }
     return false;
   } finally {

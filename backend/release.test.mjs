@@ -8,7 +8,9 @@ import { allowedOrigin } from "./origin.mjs";
 function fixture() {
   const roles = ["wolf", "seer", "witch", "guard", "villager", "villager", "villager"];
   const members = roles.map((role, i) => ({ id: i + 1, username: "P" + i }));
-  return beginGame({ players: roles.map((role, i) => ({ id: i + 1, role })) }, members, 0);
+  const game = beginGame({ players: roles.map((role, i) => ({ id: i + 1, role })) }, members, 0);
+  advanceGame(game,game.deadline);
+  return game;
 }
 const next = game => advanceGame(game, game.deadline);
 const action = (game, id, targetId, kind) => act(game, id, { phaseId: game.phaseId, targetId, kind });

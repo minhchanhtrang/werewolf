@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
+import { settleReplay, replayView } from "./replay.mjs";
 
-const durations = { voting: 120000, revealed: 8000, guard: 20000, night: 30000, seer: 20000, witch: 30000, hunter: 20000, dawn: 8000 };
+const durations = { intro: 10000, voting: 120000, revealed: 8000, guard: 20000, night: 30000, seer: 20000, witch: 30000, hunter: 20000, dawn: 8000 };
 const nightPhases = ["guard", "night", "seer", "witch"];
 const choose = items => items.length ? items[randomInt(items.length)] : null;
 const fail = message => { throw Object.assign(new Error(message), { status: 409 }); };
@@ -17,16 +18,16 @@ export function beginGame(deal, members, now = Date.now()) {
     appearances.push(...batch);
   }
   return {
-    ...deal, turnBased: true, id: randomUUID(), version: 1, phase: "guard", phaseId: 1, day: 1,
-    phaseStartedAt: now, deadline: now + durations.guard, winner: null,
+    ...deal, turnBased: true, id: randomUUID(), version: 1, phase: "intro", phaseId: 1, day: 1,
+    phaseStartedAt: now, deadline: now + durations.intro, winner: null,
     players: deal.players.map((player, index) => {
       const member = members.find(member => member.id === player.id);
       return { ...player, character: appearances[index], name: member.username, bot: Boolean(member.bot), alive: true };
     }),
     votes: {}, actions: {}, seerResults: {}, previousGuardTargetId: null,
     witchPotions: { heal: true, poison: true }, witchChoice: null, pendingAttackId: null,
-    revealedVotes: [], history: [{ title: "Đêm 1", text: "Bảo vệ thức giấc, chọn một người để che chở qua đêm." }],
-    phaseNotice: "Đêm 1: Bảo vệ thức giấc, chọn một người để che chở qua đêm."
+    revealedVotes: [], history: [{ title: "Chuẩn bị", text: "Hãy ghi nhớ vai của mình. Đêm định mệnh bắt đầu sau 10 giây." }],
+    phaseNotice: "Hãy ghi nhớ vai của mình. Lá bài tự đóng sau 5 giây; hết 10 giây bắt đầu Đêm 1."
   };
 }
 
@@ -98,15 +99,7 @@ export function act(game, userId, input) {
     return;
   }
   if (!actor?.alive) fail("Bạn đã bị loại và chỉ có thể theo dõi.");
-  if (input.kind === "suicide") {
-    if (game.phase === "ended") fail("Ván đã kết thúc.");
-    if (actor.role !== "wolf") fail("Chỉ Sói mới có thể tự kết liễu.");
-    actor.alive = false;
-    delete game.votes[userId]; delete game.actions[userId];
-    log(game, actor.name + " đã tự sát.");
-    if (!nightPhases.includes(game.phase)) winner(game);
-    return;
-  }
+  if (input.kind === "suicide") fail("Để tự hiến làm nạn nhân, hãy chọn chính mình trong lượt Sói đi săn.");
   if (game.phase === "voting" && game.turnBased) {
     if (input.kind !== "blank" && (!target?.alive || target.id === actor.id)) fail("Chọn người còn sống khác bạn hoặc phiếu trắng.");
     game.votes[userId] = input.kind === "blank" ? null : target.id;
@@ -149,7 +142,7 @@ export function act(game, userId, input) {
   }
   if (game.turnBased ? ({ guard: "guard", night: "wolf", seer: "seer" }[game.phase] !== actor.role) : game.phase !== "night") fail("Chưa đến lượt kỹ năng của bạn.");
   if (!["wolf", "seer", "guard"].includes(actor.role)) fail("Bạn không có hành động trong lượt này.");
-  if (actor.role === "wolf" && target.role === "wolf") fail("Sói không được tấn công đồng đội.");
+  if (actor.role === "wolf" && target.role === "wolf" && target.id !== actor.id) fail("Sói chỉ được chọn bản thân hoặc người ngoài phe Sói.");
   if (actor.role === "guard" && target.id === game.previousGuardTargetId) fail("Không được bảo vệ cùng người hai đêm liên tiếp.");
   if (actor.role === "seer") {
     if (actor.id === target.id) fail("Tiên tri không tự soi mình.");
@@ -227,12 +220,15 @@ function callHunter(game, id, resume, now) {
 export function advanceGame(game, now = Date.now()) {
   if (!game || game.version !== 1 || game.phase === "ended") return false;
   const before = JSON.stringify(game);
+  settleReplay(game, now);
   for (let i = 0; i < 64 && game.phase !== "ended"; i++) {
     if (now >= game.phaseStartedAt + 3000) botsAct(game);
     if (game.turnBased && game.phase === "voting") shortenVote(game, now);
     if (now < game.deadline) break;
     const at = game.deadline;
-    if (game.phase === "voting") {
+    if (game.phase === "intro") {
+      enter(game, "guard", at);
+    } else if (game.phase === "voting") {
       const votes = Object.fromEntries(Object.entries(game.votes).filter(([actorId, targetId]) =>
         game.players.some(player => player.id === Number(actorId) && player.alive)
         && game.players.some(player => player.id === targetId && player.alive)));
@@ -289,7 +285,7 @@ export function gameView(game, userId) {
   const me = game.players.find(player => player.id === userId);
   return {
     id: game.id, phase: game.phase, phaseId: game.phaseId, day: game.day, startedAt: game.startedAt,
-    phaseNotice: game.phaseNotice || null,
+    phaseNotice: game.phaseNotice || null, replayVote: replayView(game, userId),
     isTest: game.isTest, myRole: me?.role || null, selfAlive: Boolean(me?.alive),
     deadline: game.deadline, serverNow: Date.now(), winner: game.winner,
     roster: game.players.map(player => ({

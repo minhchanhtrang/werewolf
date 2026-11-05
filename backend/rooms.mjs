@@ -8,8 +8,14 @@ import { persistGame, finishedResult, forgetResult } from "./game-storage.mjs";
 import { allowedOrigin } from "./origin.mjs";
 import { readWolfChat, sendWolfChat } from "./wolf-chat.mjs";
 import { roomTag } from "./http-cache.mjs";
+import { requestReplay, voteReplay, settleReplay } from "./replay.mjs";
 
 const fault = (status, message) => Object.assign(new Error(message), { status });
+async function resetToWaiting(db, code) {
+  await db.query("UPDATE ww_rooms SET role_state=NULL WHERE code=$1", [code]);
+  await db.query("UPDATE ww_room_members SET ready=FALSE WHERE room_code=$1", [code]);
+  forgetResult(code);
+}
 
 async function currentRoom(db, userId) {
   // Một câu truy vấn để ảnh chụp phòng và thành viên nhất quán.
@@ -37,7 +43,7 @@ export function createRooms(pool) {
   return async (request, response, pathname) => {
     const actions = {
       "/api/rooms/current": "GET", "/api/rooms/create": "POST",
-      "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST",
+      "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST", "/api/rooms/replay-vote": "POST",
       "/api/rooms/bots": "POST", "/api/rooms/config": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
     if (!actions[pathname]) return json(response, 404, { error: "Không có API phòng này." });
@@ -100,9 +106,14 @@ export function createRooms(pool) {
         if (["/api/rooms/bots", "/api/rooms/config", "/api/rooms/start", "/api/rooms/reset"].includes(pathname)) {
           if (room.rows[0].host_id !== user.id) throw fault(403, "Chỉ chủ phòng được thực hiện thao tác này.");
           if (pathname.endsWith("/reset")) {
-            await client.query("UPDATE ww_rooms SET role_state=NULL WHERE code=$1", [code]);
-            forgetResult(code);
-            await client.query("UPDATE ww_room_members SET ready=FALSE WHERE room_code=$1", [code]);
+            const game = room.rows[0].role_state;
+            advanceGame(game);
+            if (game && game.phase !== "ended") {
+              if (body.gameId !== game.id) throw fault(409, "Ván chơi đã thay đổi. Hãy tải lại phòng.");
+              const members = await client.query("SELECT user_id FROM ww_room_members WHERE room_code=$1", [code]);
+              if (requestReplay(game, user.id, members.rows.map(m => m.user_id))) await resetToWaiting(client, code);
+              else await persistGame(client, code, game);
+            } else await resetToWaiting(client, code);
           } else {
             if (room.rows[0].role_state) throw fault(409, "Phòng đã chia vai. Quay lại phòng chờ trước.");
             const current = await currentRoom(client, user.id);
@@ -129,6 +140,12 @@ export function createRooms(pool) {
               await persistGame(client, code, game);
             }
           }
+        } else if (pathname.endsWith("/replay-vote")) {
+          const game = room.rows[0].role_state;
+          advanceGame(game);
+          if (!game || game.phase === "ended") throw fault(409, "Ván đã kết thúc.");
+          if (voteReplay(game, user.id, body)) await resetToWaiting(client, code);
+          else await persistGame(client, code, game);
         } else if (pathname.endsWith("/wolf-chat")) {
           const game = room.rows[0].role_state;
           if (advanceGame(game)) await persistGame(client, code, game);
@@ -147,7 +164,12 @@ export function createRooms(pool) {
             const game = room.rows[0].role_state;
             advanceGame(game);
             leaveGame(game, user.id);
-            await persistGame(client, code, game);
+            if (game.replayVote?.status === "open") {
+              game.replayVote.voters = game.replayVote.voters.filter(id => id !== user.id);
+              delete game.replayVote.votes[user.id];
+            }
+            if (game.phase !== "ended" && settleReplay(game)) await resetToWaiting(client, code);
+            else await persistGame(client, code, game);
           }
           await client.query("DELETE FROM ww_room_members WHERE user_id=$1", [user.id]);
           const remaining = await client.query("SELECT user_id FROM ww_room_members WHERE room_code=$1 ORDER BY joined_at,user_id LIMIT 1", [code]);

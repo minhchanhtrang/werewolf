@@ -3,6 +3,7 @@ import { ROLE_LABELS } from "./rules.js";
 
 const phases = { voting: "Làng họp bàn", revealed: "Mở phiếu", guard: "Bảo vệ đang che chở", night: "Sói đang đi săn", seer: "Tiên tri đang soi", witch: "Phù thủy đang pha thuốc", hunter: "Phát súng cuối cùng", dawn: "Bình minh ló rạng", ended: "Kết thúc" };
 const isNight = phase => ["guard", "night", "seer", "witch"].includes(phase);
+phases.intro = "Nhận vai";
 
 export function createOnlineGame(onAction) {
   const panel = document.querySelector("#onlineGame");
@@ -30,37 +31,49 @@ export function createOnlineGame(onAction) {
   let poisonMode = false;
   let potionPhase = "";
   let currentBusy = false;
+  let draftTargetId = null;
+  let draftPhase = "";
   const witchPanel = document.querySelector("#witchControls");
   const healButton = document.querySelector("#witchHeal");
   const poisonButton = document.querySelector("#witchPoison");
   const skipButton = document.querySelector("#witchSkip");
   const blankButton = document.querySelector("#blankVote");
-  const suicideButton = document.querySelector("#suicideGame");
   const hunterSkip = document.querySelector("#hunterSkip");
-  blankButton.addEventListener("click", () => { if (!blankButton.disabled) onAction(null, "blank"); });
+  blankButton.addEventListener("click", () => { if (!blankButton.disabled) { draftTargetId = null; sceneKey = ""; onAction(null, "blank"); } });
   hunterSkip.addEventListener("click", () => { if (!hunterSkip.disabled) onAction(null, "skip"); });
-  suicideButton.addEventListener("click", () => {
-    if (!suicideButton.disabled && confirm("Tự sát sẽ loại bạn khỏi ván và không thể hoàn tác. Tiếp tục?")) onAction(null, "suicide");
-  });
   healButton.addEventListener("click", () => {
     if (!healButton.disabled && current?.witch?.canHeal) onAction(null, "heal");
   });
   poisonButton.addEventListener("click", () => {
     if (poisonButton.disabled) return;
     poisonMode = !poisonMode;
+    draftTargetId = null;
     render(current, userId, currentBusy);
   });
   skipButton.addEventListener("click", () => {
     if (!skipButton.disabled) onAction(null, "skip");
   });
   const scene = createScene(document.querySelector("#onlineScene"), targetId => {
-    if (eligible.some(player => player.id === targetId) && !button.disabled) onAction(targetId, current?.phase === "witch" ? "poison" : undefined);
+    if (!currentBusy && eligible.some(player => player.id === targetId) && current?.deadline > Date.now() + offset) {
+      draftTargetId = targetId;
+      sceneKey = "";
+      render(current, userId, currentBusy);
+    }
+  });
+  target.addEventListener("change", () => {
+    draftTargetId = target.value ? Number(target.value) : null;
+    sceneKey = "";
+    render(current, userId, currentBusy);
   });
   document.querySelector("#onlineActionForm").addEventListener("submit", event => {
     event.preventDefault();
     if (!button.disabled && eligible.some(player => player.id === Number(target.value))) onAction(Number(target.value), current?.phase === "witch" ? "poison" : undefined);
   });
   function updateTimer() {
+    const replay = current?.replayVote;
+    const replaySeconds = replay?.status === "open" ? Math.max(0, Math.ceil((replay.deadline - Date.now() - offset) / 1000)) : null;
+    document.querySelector("#replayCountdown").textContent = replaySeconds === null ? "" : "Còn " + replaySeconds + " giây để biểu quyết.";
+    if (replaySeconds === 0) for (const selector of ["#replayYes", "#replayNo"]) document.querySelector(selector).disabled = true;
     const seconds = current?.deadline ? Math.max(0, Math.ceil((current.deadline - Date.now() - offset) / 1000)) : null;
     timer.textContent = seconds === null ? "" : "Còn " + seconds + " giây";
     timer.classList.toggle("urgent", seconds !== null && seconds <= 5);
@@ -90,6 +103,7 @@ export function createOnlineGame(onAction) {
       guide.textContent = "";
       sceneKey = optionsKey = "";
       eligible = [];
+      draftTargetId = null; draftPhase = "";
       target.replaceChildren(); history.replaceChildren();
       document.querySelector("#onlineSeer").textContent = "";
       document.querySelector("#onlineTeam").textContent = "";
@@ -110,9 +124,14 @@ export function createOnlineGame(onAction) {
     logPanel.hidden = false;
     document.querySelector("#gameLogCount").textContent = "(" + game.history.length + ")";
     const phaseKey = identity + ":" + game.phaseId;
+    if (draftPhase !== phaseKey) {
+      draftTargetId = game.myVote ?? game.myAction ?? null;
+      draftPhase = phaseKey;
+    }
     if (potionPhase !== phaseKey) { poisonMode = false; potionPhase = phaseKey; }
+    if (game.phase !== "witch" || game.myRole !== "witch" || !me?.alive || !game.witch?.poison || game.witch?.choice?.poisonId != null || game.witch?.choice?.done) poisonMode = false;
     if (phaseKey !== noticeKey) {
-      document.querySelector("#phaseNoticeHeading").textContent = (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
+      document.querySelector("#phaseNoticeHeading").textContent = game.phase === "intro" ? "Nhận vai" : (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
       document.querySelector("#phaseNoticeText").textContent = game.phaseNotice || game.history.at(-1)?.text || "Ván đã bắt đầu. Hãy xem vai và chọn hành động theo lượt.";
       notice.hidden = false;
       noticeKey = phaseKey;
@@ -143,32 +162,35 @@ export function createOnlineGame(onAction) {
       resultPlayers.replaceChildren();
       resultKey = "";
     }
-    guide.textContent = game.phase === "ended" ? "Vai của tất cả người chơi đã được công khai."
+    guide.textContent = game.phase === "intro" ? "Ghi nhớ vai của bạn. Đêm 1 bắt đầu khi hết 10 giây chuẩn bị."
+      : game.phase === "ended" ? "Vai của tất cả người chơi đã được công khai."
       : game.hunterTurn ? "Chọn một nhân vật để bắn hoặc bỏ phát bắn."
       : !me?.alive ? "Bạn đang theo dõi ván."
-      : game.phase === "voting" ? "Thảo luận rồi bấm một nhân vật hoặc chọn trong danh sách để bỏ phiếu kín. Có thể đổi phiếu trước khi hết giờ."
+      : game.phase === "voting" ? "Nhấp nhân vật để chọn mục tiêu, rồi bấm Bỏ phiếu để xác nhận. Có thể đổi phiếu trước khi hết giờ."
       : ["night", "guard", "seer"].includes(game.phase) ? "Chỉ người có vai được gọi mới hành động. Mỗi lượt vẫn chạy đủ giờ dù vai đó đã chết."
       : game.phase === "witch" ? "Phù thủy có 30 giây, được dùng cả hai bình trong đêm. Những người khác chờ bình minh."
       : game.phase === "revealed" ? "Phiếu đã được công bố. Hòa phiếu thì không loại ai; đêm sẽ tự bắt đầu."
       : "Đọc kết quả đêm trong diễn biến. Lượt bỏ phiếu tiếp theo sẽ tự bắt đầu.";
-    document.querySelector("#onlinePhase").textContent = (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
+    document.querySelector("#onlinePhase").textContent = game.phase === "intro" ? "Chuẩn bị · Nhận vai" : (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
     document.querySelector("#onlineLiving").textContent = game.roster.filter(player => player.alive).length + "/" + game.roster.length + " còn sống";
-    document.querySelector("#onlineSeer").textContent = game.seerResult ? "Kết quả soi riêng · Đêm " + game.seerResult.day + ": " + game.seerResult.text : "";
+    document.querySelector("#onlineSeer").textContent = game.seerResult ? "Kết quả soi: Đêm " + game.seerResult.day + ": " + game.seerResult.text : "";
     document.querySelector("#onlineTeam").textContent = game.myRole === "wolf"
       ? "Phe Sói: " + game.roster.filter(player => game.wolfIds.includes(player.id)).map(player => player.name).join(", ") : "";
     eligible = [];
     let text;
     let label = "Gửi lựa chọn";
-    if (game.phase === "ended") {
+    if (game.phase === "intro") {
+      text = "Đêm định mệnh sắp bắt đầu…";
+    } else if (game.phase === "ended") {
       text = (game.winner === "idiot" ? "Thằng ngu chiến thắng riêng." : game.winner === "wolves" ? "Phe Sói chiến thắng." : "Phe Dân chiến thắng.") + " Các vai đã được công bố.";
     } else if (game.hunterTurn) {
       eligible = game.roster.filter(player => player.alive);
-      label = "Bắn mục tiêu"; text = "Nhấp một người để bắn, hoặc bỏ phát bắn.";
+      label = "Bắn mục tiêu"; text = "Nhấp một người để chọn, rồi xác nhận phát bắn; hoặc bỏ lượt.";
     } else if (!me?.alive) text = "Bạn đã bị loại. Bạn có thể theo dõi đến hết ván.";
     else if (game.phase === "voting") {
       eligible = game.canVote ? game.roster.filter(player => player.alive && player.id !== id) : [];
       label = game.myVote === null ? "Bỏ phiếu" : "Đổi phiếu";
-      text = !game.canVote ? "Bạn đã mất quyền bỏ phiếu. Vẫn có thể thảo luận." : "Đã ghi nhận " + game.voteCount + " phiếu. " + (game.hasVoted ? game.myVote === null ? "Bạn đã bỏ phiếu trắng." : "Bạn chọn: " + game.roster.find(player => player.id === game.myVote)?.name : "Nhấp nhân vật hoặc chọn phiếu trắng.") + " Tất cả đã vote thì còn tối đa 5 giây.";
+      text = !game.canVote ? "Bạn đang theo dõi lượt bỏ phiếu." : "Đã ghi nhận " + game.voteCount + " phiếu." + (game.hasVoted ? "\n" + (game.myVote === null ? "Bạn đã bỏ phiếu trắng." : "Bạn chọn: " + game.roster.find(player => player.id === game.myVote)?.name) : "");
     } else if (game.phase === "witch" && game.myRole === "witch") {
       text = game.witch?.choice?.done ? "Đã bỏ lượt còn lại. Chờ bình minh." : "Có thể dùng cả hai bình trong đêm. Bình không dùng sẽ được giữ lại.";
       if (poisonMode && game.witch?.poison && !game.witch.choice?.poisonId && !game.witch.choice?.done) {
@@ -178,7 +200,7 @@ export function createOnlineGame(onAction) {
       }
     } else if (game.phase === "witch") text = "Đang chờ Phù thủy. Hãy chờ bình minh.";
     else if (({ guard: "guard", night: "wolf", seer: "seer" }[game.phase]) === game.myRole) {
-      eligible = game.roster.filter(player => player.alive && (game.myRole === "wolf" ? !game.wolfIds.includes(player.id) : game.myRole === "seer" ? player.id !== id : player.id !== game.previousGuardTargetId));
+      eligible = game.roster.filter(player => player.alive && (game.myRole === "wolf" ? player.id === id || !game.wolfIds.includes(player.id) : game.myRole === "seer" ? player.id !== id : player.id !== game.previousGuardTargetId));
       label = { wolf: "Chọn nạn nhân", seer: "Soi người", guard: "Bảo vệ" }[game.myRole];
       text = game.myAction === null ? "Chọn mục tiêu, hoặc chờ hết giờ để bỏ lượt." : "Đã ghi nhận lựa chọn của bạn.";
       if (game.myRole === "seer" && game.myAction !== null) {
@@ -186,12 +208,13 @@ export function createOnlineGame(onAction) {
         text = "Bạn đã dùng lượt soi đêm nay.";
       }
       if (game.myRole === "guard") text += " Được tự bảo vệ, không lặp người của đêm trước.";
+      if (game.myRole === "wolf") text += " Có thể chọn chính mình làm nạn nhân; kết quả vẫn theo lựa chọn chung của bầy Sói.";
     } else if (game.phase === "night") text = game.myRole === "witch" ? "Chờ lượt Phù thủy sau khi Sói chốt mục tiêu." : "Dân làng đang ngủ. Hãy chờ trời sáng.";
     else text = "Kết quả đã công bố. Server sẽ tự chuyển pha khi hết giờ.";
     status.textContent = text;
     witchPanel.hidden = !(game.phase === "witch" && game.myRole === "witch" && me?.alive);
     document.querySelector("#witchStatus").textContent = witchPanel.hidden ? "" :
-      "Bình cứu: " + (game.witch?.heal ? "1" : "0") + " · Bình độc: " + (game.witch?.poison ? "1" : "0") + ". "
+      "Bình cứu: " + (game.witch?.heal ? "1" : "0") + " · Bình độc: " + (game.witch?.poison ? "1" : "0") + ".\n"
       + (game.witch?.choice?.heal ? "Đã dùng bình cứu. " : game.witch?.canHeal ? "Đêm nay có người bị Sói tấn công. Bạn có muốn cứu không? " : "Không có mục tiêu có thể cứu. ")
       + (game.witch?.choice?.poisonId ? "Đã dùng bình độc." : "");
     const potionsLocked = busy || witchPanel.hidden || Boolean(game.witch?.choice?.done);
@@ -200,12 +223,12 @@ export function createOnlineGame(onAction) {
     skipButton.disabled = potionsLocked;
     poisonButton.textContent = poisonMode ? "Hủy chọn bình độc" : "Chọn bình độc";
     button.textContent = label;
-    button.disabled = busy || eligible.length === 0;
+    if (!eligible.some(player => player.id === draftTargetId)) draftTargetId = null;
+    button.disabled = busy || draftTargetId === null;
     target.disabled = busy || eligible.length === 0;
     blankButton.hidden = game.phase !== "voting" || !game.canVote;
     blankButton.disabled = busy;
     hunterSkip.hidden = !game.hunterTurn; hunterSkip.disabled = busy;
-    suicideButton.hidden = game.myRole !== "wolf" || !me?.alive || game.phase === "ended"; suicideButton.disabled = busy;
     const choices = document.querySelector("#wolfChoices");
     choices.hidden = !game.wolfChoices?.length;
     const choiceList = document.querySelector("#wolfChoicesList"); choiceList.replaceChildren();
@@ -215,16 +238,17 @@ export function createOnlineGame(onAction) {
     document.querySelector("#onlineActionForm").hidden = eligible.length === 0;
     const key = JSON.stringify([game.phaseId, eligible.map(player => [player.id, player.name])]);
     if (key !== optionsKey) {
-      const previous = target.value;
       target.replaceChildren();
+      const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "Nhấp nhân vật để chọn"; target.append(placeholder);
       eligible.forEach(player => {
         const option = document.createElement("option"); option.value = player.id; option.textContent = player.name;
         target.append(option);
       });
-      if (eligible.some(player => String(player.id) === previous)) target.value = previous;
       optionsKey = key;
     }
-    const presentation = JSON.stringify([game.roster, game.phase, game.revealedVotes, game.myVote, game.myAction]);
+    target.value = draftTargetId === null ? "" : String(draftTargetId);
+    document.querySelector("#targetSelection").textContent = draftTargetId === null ? "" : "Đang chọn: " + game.roster.find(player => player.id === draftTargetId)?.name;
+    const presentation = JSON.stringify([game.roster, game.phase, game.revealedVotes, game.myVote, game.myAction, draftTargetId]);
     if (presentation !== sceneKey) {
       const roster = game.roster.map((player, index) => {
         const angle = index / game.roster.length * Math.PI * 2 - Math.PI / 2;
@@ -232,7 +256,7 @@ export function createOnlineGame(onAction) {
       });
       scene.render(roster, {
         phase: game.phase, sleeping: isNight(game.phase), showRoles: false,
-        selectedPlayerId: userId, votes: new Map(game.revealedVotes)
+        selectedPlayerId: userId, targetId: draftTargetId, votes: new Map(game.revealedVotes)
       });
       document.querySelector("#onlineScene").classList.toggle("night", isNight(game.phase));
       sceneKey = presentation;

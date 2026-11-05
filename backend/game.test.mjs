@@ -5,7 +5,9 @@ import { validateRoles } from "../js/rules.js";
 
 function fixture(roles = ["wolf","wolf","seer","guard","witch","hunter","idiot","villager","villager","villager"]) {
   const members = roles.map((role,i) => ({id:i+1,username:"P"+(i+1)}));
-  return beginGame({players:roles.map((role,i)=>({id:i+1,role}))},members,Date.now());
+  const game = beginGame({players:roles.map((role,i)=>({id:i+1,role}))},members,Date.now());
+  advanceGame(game,game.deadline);
+  return game;
 }
 const next = g => advanceGame(g,g.deadline);
 const action = (g,id,targetId,kind) => act(g,id,{phaseId:g.phaseId,targetId,kind});
@@ -88,14 +90,23 @@ test("Thợ săn bắn khi bị Sói/treo cổ, trì hoãn thắng; độc khôn
   assert.equal(p.phase,"dawn"); assert.equal(gameView(p,6).hunterTurn,false);
 });
 
-test("Chỉ Sói có quyền tự sát; rời ván và điều kiện thắng",()=>{
+test("Bỏ API tự sát tức thì; rời ván và điều kiện thắng",()=>{
   const g=fixture();
-  for(const id of [3,4,5,6,7,8]) assert.throws(()=>action(g,id,null,"suicide"),/Chỉ Sói/);
+  for(const id of [1,3,4,5,6,7,8]) assert.throws(()=>action(g,id,null,"suicide"),/chọn chính mình/);
   assert.ok(g.players.every(p=>p.alive));
-  action(g,1,null,"suicide"); assert.equal(g.players[0].alive,false);
-  assert.throws(()=>action(g,1,8)); voting(g);
+  voting(g);
   leaveGame(g,1); leaveGame(g,2); assert.equal(g.phase,"ended"); assert.equal(g.winner,"villagers");
   assert.ok(gameView(g,3).roster.every(p=>p.role)); assert.equal(g.deadline,null);
+});
+
+test("Sói chọn chính mình là nạn nhân, chờ cuối đêm và có thể được cứu",()=>{
+  const g=fixture(); next(g); action(g,1,1);
+  assert.equal(g.actions[1],1); assert.ok(g.players[0].alive);
+  assert.throws(()=>action(g,2,1));
+  next(g); assert.equal(g.pendingAttackId,1); next(g);
+  action(g,5,null,"heal"); next(g); assert.ok(g.players[0].alive);
+  const h=fixture(); next(h); action(h,1,1); next(h); next(h); next(h);
+  assert.equal(h.players[0].alive,false); assert.ok(h.players[1].alive);
 });
 
 test("Thằng ngu không thắng khi hòa phiếu hoặc chết trong đêm",()=>{

@@ -5,6 +5,7 @@
 import { authState } from "./auth.js";
 import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
+import { createRoleIntro } from "./role-intro.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
@@ -77,24 +78,37 @@ document.addEventListener("visibilitychange", () => {
 });
 
 let room = null;
+const syncRoleIntro = createRoleIntro(showRole, hideRole);
+let introServerNow = null;
+let introOffset = 0;
+function updateRoleIntro() {
+  const game = room?.game;
+  if (game && game.serverNow !== introServerNow) {
+    introServerNow = game.serverNow;
+    introOffset = game.serverNow - Date.now();
+  }
+  syncRoleIntro(game, Date.now() + introOffset, !document.hidden);
+}
+setInterval(updateRoleIntro, 250);
 let busy = false;
 let generation = 0;
 let controller = null;
 let revision = "";
 const roleFields = document.querySelector("#roleConfigFields");
 let configKey = "";
+let dismissedReplayId = null;
+document.querySelector("#dismissReplay").addEventListener("click", () => {
+  dismissedReplayId = room?.game?.replayVote?.id;
+  document.querySelector("#replayPanel").hidden = true;
+});
 for (const [role, label] of Object.entries(ROLE_LABELS)) {
   const field = document.createElement("label"); field.className = "waiting-role-card";
   const artwork = document.createElement("div"); artwork.className = "waiting-role-card__art";
-  if (["hunter", "idiot"].includes(role)) {
-    artwork.textContent = role === "hunter" ? "🏹" : "🃏";
-    artwork.classList.add("waiting-role-card__art--" + role);
-  } else {
-    const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
-    image.alt = ""; image.loading = "lazy"; artwork.append(image);
-  }
+  const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
+  image.alt = ""; image.loading = "lazy"; artwork.append(image);
   const name = document.createElement("strong"); name.textContent = label;
   const team = document.createElement("span"); team.className = "waiting-role-card__team";
+  team.classList.add("waiting-role-card__team--" + (role === "idiot" ? "third" : role === "wolf" ? "wolf" : "village"));
   team.textContent = role === "idiot" ? "Phe thứ ba" : role === "wolf" ? "Phe Sói" : "Phe Dân";
   const quantity = document.createElement("span"); quantity.textContent = "Số lượng";
   field.append(artwork, name, team, quantity);
@@ -246,7 +260,27 @@ function render() {
 
   renderGame(room?.game, user?.id, busy);
   renderWolfChat(room, busy);
+  const activeGame = room?.game && room.game.phase !== "ended";
+  const replay = activeGame ? room.game.replayVote : null;
+  const openReplay = replay?.status === "open";
+  const replayRequest = document.querySelector("#requestReplay");
+  replayRequest.hidden = !activeGame || room.host_id !== user?.id;
+  replayRequest.disabled = busy || openReplay;
+  document.querySelector("#replayPanel").hidden = !replay || (!openReplay && dismissedReplayId === replay.id);
+  document.querySelector("#dismissReplay").hidden = !replay || openReplay;
+  const resetMenu = document.querySelector("#resetRoom-game");
+  resetMenu.hidden = !room?.game || room.host_id !== user?.id;
+  resetMenu.textContent = activeGame ? "Đề nghị chơi lại" : "Về phòng chờ";
+  document.querySelector("#replayStatus").textContent = !replay ? "" : openReplay
+    ? `${replay.yes}/${replay.total} đồng ý · Cần ${replay.required} phiếu. Bot không tính phiếu. Ván vẫn tiếp tục trong lúc biểu quyết.`
+    : "Chưa đủ người đồng ý. Ván chơi tiếp tục.";
+  for (const [selector, agree] of [["#replayYes", true], ["#replayNo", false]]) {
+    const control = document.querySelector(selector);
+    control.hidden = !openReplay || !replay.canVote;
+    control.disabled = busy || replay?.myVote === agree;
+  }
   if (!room?.game) {
+    syncRoleIntro(null);
     hideRole();
     rolePortrait.removeAttribute("src");
   }
@@ -274,7 +308,7 @@ function render() {
   removeBots.hidden||= dealt;
   startRoom.hidden ||= dealt;
   resetRoom.hidden ||= !dealt;
-  resetRoom.textContent = room.game?.phase === "ended" ? "Về phòng chờ" : "Kết thúc ván / Về phòng chờ";
+  resetRoom.textContent = room.game?.phase === "ended" ? "Về phòng chờ" : "Đề nghị chơi lại";
   readyButton.hidden = dealt;
 
   const resultBtn = document.querySelector("#resetRoom-result");
@@ -327,7 +361,7 @@ function render() {
     document.querySelector("#roleDescription").textContent = descriptions[room.game.myRole] || "";
     const role = room.game.myRole;
     if (Object.hasOwn(labels, role)) {
-      const portrait = "/assets/role/role-" + (["hunter", "idiot"].includes(role) ? "villager" : role) + ".png";
+      const portrait = "/assets/role/role-" + role + ".png";
       if (rolePortrait.getAttribute("src") !== portrait) rolePortrait.src = portrait;
     } else {
       rolePortrait.removeAttribute("src");
@@ -364,6 +398,7 @@ function render() {
   });
 
   // Keep mirror elements in sync after full render
+  updateRoleIntro();
   _syncWaitingRoomUI();
 }
 
@@ -447,8 +482,16 @@ leaveButton.addEventListener("click", () => update("leave", {}));
 document.querySelector("#leaveRoom-waiting")?.addEventListener("click", () => update("leave", {}));
 document.querySelector("#leaveRoom-game")?.addEventListener("click", () => update("leave", {}));
 
-document.querySelector("#resetRoom-waiting")?.addEventListener("click", () => update("reset", {}));
-document.querySelector("#resetRoom-game")?.addEventListener("click", () => update("reset", {}));
+const requestReset = () => update("reset", { gameId: room?.game?.id });
+document.querySelector("#requestReplay").addEventListener("click", requestReset);
+for (const [selector, agree] of [["#replayYes", true], ["#replayNo", false]]) {
+  document.querySelector(selector).addEventListener("click", () => {
+    const vote = room?.game?.replayVote;
+    if (vote?.status === "open") update("replay-vote", { gameId: room.game.id, voteId: vote.id, agree });
+  });
+}
+document.querySelector("#resetRoom-waiting")?.addEventListener("click", requestReset);
+document.querySelector("#resetRoom-game")?.addEventListener("click", requestReset);
 document.querySelector("#resetRoom-result")?.addEventListener("click", () => {
   if (room?.host_id === authState.user?.id) {
     update("reset", {});
@@ -471,7 +514,7 @@ document.querySelector("#copyRoomCode-waiting")?.addEventListener("click", async
 fillBots.addEventListener("click",    () => update("bots", { fill: true }));
 removeBots.addEventListener("click",  () => update("bots", { fill: false }));
 startRoom.addEventListener("click",   () => update("start", {}));
-resetRoom.addEventListener("click",   () => update("reset", {}));
+resetRoom.addEventListener("click", requestReset);
 
 async function poll() {
   await update();

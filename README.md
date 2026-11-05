@@ -19,14 +19,16 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 - Mỗi phòng 5–20 người, bắt đầu khi có ít nhất 5 người và tất cả người thật sẵn sàng.
 - Mỗi lần bấm thêm bot chỉ thêm một bot; bot sẵn sàng tự động.
 - Chủ phòng lưu bộ vai tùy chọn trước khi bắt đầu: tổng vai bằng số người, 5–20 người; ít nhất 1 Sói và ít Sói hơn phe Dân. Vai đặc biệt tối đa 1 mỗi loại. Đổi bộ vai hủy sẵn sàng của mọi người.
-- Ván bắt đầu Đêm 1: Bảo vệ 20 giây → Sói 30 giây → Tiên tri 20 giây → Phù thủy 30 giây → bình minh. Mọi lượt ban đêm vẫn chạy đủ giờ kể cả vai vắng mặt/đã chết để tránh lộ vai. Hành động có thể sửa đến hết lượt, riêng soi và dùng bình chỉ một lần.
+- Khi vào ván có 10 giây chuẩn bị; lá bài vai tự mở trong 5 giây đầu rồi tự đóng. Sau đó bắt đầu Đêm 1: Bảo vệ 20 giây → Sói 30 giây → Tiên tri 20 giây → Phù thủy 30 giây → bình minh. Mọi lượt ban đêm vẫn chạy đủ giờ kể cả vai vắng mặt/đã chết để tránh lộ vai. Hành động có thể sửa đến hết lượt, riêng soi và dùng bình chỉ một lần. Nút Xem vai vẫn dùng được sau khi bài tự đóng.
 - Thảo luận/bỏ phiếu 2 phút; tất cả người có quyền đã bỏ phiếu (kể cả phiếu trắng) thì rút còn tối đa 5 giây. Nhấp nhân vật để chọn trực tiếp.
 - Sói có bảng mục tiêu riêng; chỉ một nạn nhân mỗi đêm, hòa thì chọn ngẫu nhiên đều giữa các mục tiêu đồng hạng cao nhất.
+- Trong ván, chủ phòng có thể đề nghị chơi lại. Biểu quyết 30 giây, cần quá nửa người thật trong phòng đồng ý (chủ phòng tự đồng ý, người đã chết vẫn được vote, bot không tính). Đủ phiếu sẽ hủy ván, xóa dữ liệu ván và chat, giữ mã phòng/bộ vai/bot, hủy sẵn sàng. Thiếu phiếu thì chơi tiếp. Rời phòng sẽ rút người đó khỏi biểu quyết. Sau khi kết thúc ván, chủ phòng vẫn có thể đưa cả phòng về ngay.
 - Phù thủy có một bình cứu và một bình độc cho cả ván, được dùng cả hai cùng đêm. Nạn nhân chỉ chết sau lượt Phù thủy; thông báo cứu không nêu tên. Độc xuyên bảo vệ và không bị bình cứu hóa giải.
 - Thợ săn bị Sói giết/treo cổ được bắn một người trong 20 giây trước khi xét thắng. Trúng độc, tự sát hay rời ván không được bắn.
 - Thằng ngu thuộc phe thứ ba: bị bỏ phiếu loại sẽ thắng riêng ngay lập tức. Hòa phiếu hay chết vì Sói, độc, đạn không thắng. Khi xét thắng thông thường của Sói, vai này vẫn được tính là một người không thuộc Sói còn sống.
-- Chỉ Sói được tự sát, cần xác nhận và không thể hoàn tác. Bộ vai chỉ áp dụng cho ván mới; khi nâng cấp hãy về phòng chờ rồi bắt đầu lại.
-- Phòng chờ: mã phòng/công cụ bên trái; nút sẵn sàng và vào game ở trên, tiếp theo là lá bài chọn số lượng và danh sách người tham gia. Thợ săn và Thằng ngu dùng biểu tượng tạm khi chưa có ảnh riêng.
+- Sói được chọn chính mình làm nạn nhân trong lượt săn, không có nút chết tức thì. Phiếu này tính chung với phiếu của các Sói khác; có thể được Bảo vệ/Phù thủy cứu như nạn nhân khác. Không chọn Sói đồng đội.
+- Nhấp nhân vật sẽ viền sáng mục tiêu và đồng bộ ô chọn; bấm nút hành động để xác nhận. Bộ vai chỉ áp dụng cho ván mới; khi nâng cấp hãy về phòng chờ rồi bắt đầu lại.
+- Phòng chờ: mã phòng/công cụ bên trái; nút sẵn sàng và vào game ở trên, tiếp theo là lá bài chọn số lượng và danh sách người tham gia. Thợ săn và Thằng ngu đã có ảnh vai riêng. Nhãn phe Dân màu xanh, Sói màu đỏ, phe thứ ba màu tím.
 - Phiếu giữ kín đến khi công bố; hòa không loại. Vai của người khác chỉ công khai khi kết thúc.
 - Ngoại hình ngẫu nhiên và đồng bộ suốt ván; có 10 mẫu nhân vật.
 - Nhật ký đọc tại nút Nhật ký. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói sống; tối đa 30 tin trong RAM, xóa khi hết ván. Chưa có tính năng kết bạn.

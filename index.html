@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080d14">
-  <title>Ma Sói · Đêm bên lửa trại</title>
+  <title>Ma Sói · Đêm định mệnh</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="./css/style.css">
   <script type="module" src="./js/app.js"></script>
@@ -17,17 +17,12 @@
      SCREEN 1 · ĐĂNG NHẬP
 ══════════════════════════════════════════════ -->
 <div id="screen-login" class="screen s-login">
-  <div class="s-login__bg" aria-hidden="true">
-    <div class="s-login__stars"></div>
-    <div class="s-login__moon"></div>
-    <div class="s-login__trees">🌲 🌲 🌲 🌲 🌲 🌲 🌲</div>
-    <div class="s-login__glow"></div>
-  </div>
+  <div class="s-login__bg" aria-hidden="true"></div>
 
   <div class="s-login__content">
     <div class="s-login__brand">
-      <span class="eyebrow">MA SÓI · VÒNG TRẠI</span>
-      <h1>Đêm bên lửa trại</h1>
+      <img class="s-login__logo" src="./assets/backgrounds/game-logo.png" alt="" width="434" height="434" fetchpriority="high">
+      <h1 class="s-login__title">Ma Sói · Đêm định mệnh</h1>
       <p class="s-login__tagline">Một ngôi làng. Những bí mật.<br>Ai sẽ sống đến bình minh?</p>
     </div>
 
@@ -58,7 +53,6 @@
         <button class="btn btn--ghost" id="switchAuth" type="button">Chưa có tài khoản? Đăng ký</button>
       </div>
       <p id="authMessage" class="form-msg" role="status" aria-live="polite"></p>
-      <p class="hint">Username: 3–24 ký tự, không dấu, không khoảng trắng.</p>
     </div>
   </div>
 </div>
@@ -94,7 +88,7 @@
         <div id="roomEntry">
           <p class="card__sub">Tham gia cùng bạn bè quanh lửa trại.</p>
           <button class="btn btn--primary btn--wide" id="createRoom" type="button" disabled>
-            🏕️&nbsp; Tạo phòng mới
+            + &nbsp; Tạo phòng mới
           </button>
           <div class="divider"><span>hoặc nhập mã</span></div>
           <form id="joinRoomForm" class="join-form">
@@ -173,6 +167,7 @@
           aria-selected="false" aria-controls="tabpanel-story" type="button">
           📖 Cốt truyện
         </button>
+        <button class="tab-btn" id="tab-guide" role="tab" aria-selected="false" aria-controls="tabpanel-guide" type="button">📜 Hướng dẫn chơi</button>
       </div>
 
       <!-- Tab: Nhân vật -->
@@ -223,8 +218,8 @@
             </div>
           </article>
 
-          <article class="role-card-intro"><div class="role-card-intro__body"><h3>Thợ săn</h3><p>Bị Sói giết hoặc treo cổ được bắn một người trong 20 giây. Trúng độc, tự sát hay rời ván không được bắn.</p><span class="role-tag role-tag--good">Phe Dân</span></div></article>
-          <article class="role-card-intro"><div class="role-card-intro__body"><h3>Thằng ngu</h3><p>Thuộc phe thứ ba. Khiến cả làng bỏ phiếu loại mình để giành chiến thắng riêng. Chết vì Sói, độc hay đạn sẽ không thắng.</p><span class="role-tag">Phe thứ ba</span></div></article>
+          <article class="role-card-intro"><div class="role-card-intro__img"><img src="/assets/role/role-hunter.png" alt="" width="200" height="200" loading="lazy"></div><div class="role-card-intro__body"><h3>Thợ săn</h3><p>Bị Sói giết hoặc treo cổ được bắn một người trong 20 giây. Trúng độc, tự sát hay rời ván không được bắn.</p><span class="role-tag role-tag--good">Phe Dân</span></div></article>
+          <article class="role-card-intro"><div class="role-card-intro__img"><img src="/assets/role/role-idiot.png" alt="" width="200" height="200" loading="lazy"></div><div class="role-card-intro__body"><h3>Thằng ngu</h3><p>Thuộc phe thứ ba. Khiến cả làng bỏ phiếu loại mình để giành chiến thắng riêng. Chết vì Sói, độc hay đạn sẽ không thắng.</p><span class="role-tag role-tag--third">Phe thứ ba</span></div></article>
           <article class="role-card-intro role-villager">
             <div class="role-card-intro__img">
               <img src="/assets/role/role-villager.png" alt="" width="200" height="200" loading="lazy">
@@ -252,7 +247,23 @@
               <li><strong>Ban ngày:</strong> thảo luận &amp; bỏ phiếu kín. Hòa → không loại ai.</li>
               <li><strong>Ban đêm:</strong> Sói tấn công, đặc biệt dùng năng lực.</li>
               <li><strong>Dân thắng</strong> khi hết Sói; <strong>Sói thắng</strong> khi số Sói ≥ số Dân còn sống.</li>
+              <li><strong>Thằng ngu</strong> thuộc phe thứ ba, thắng riêng khi bị cả làng bỏ phiếu loại.</li>
             </ul>
+          </div>
+        </div>
+      </div>
+      <div id="tabpanel-guide" role="tabpanel" aria-labelledby="tab-guide" class="tabpanel" hidden>
+        <div class="play-guide">
+          <header class="play-guide__header"><p class="eyebrow">ĐÊM ĐỊNH MỆNH</p><h3>Từ sảnh chờ đến đêm săn đầu tiên</h3><p>Giữ kín vai của mình, quan sát diễn biến và xác nhận lựa chọn trước khi hết giờ.</p></header>
+          <div class="play-guide__grid">
+            <section class="play-guide__card"><h4>01 · Tạo hoặc vào phòng</h4><p>Bấm <strong>Tạo phòng mới</strong> để làm chủ phòng, hoặc nhập mã do bạn bè gửi rồi bấm <strong>Vào phòng</strong>. Mã phòng nằm ở góc trên bên trái phòng chờ; dùng nút sao chép để chia sẻ.</p><p>Chủ phòng có thể thêm từng bot để chơi thử hoặc xóa toàn bộ bot để nhường chỗ cho bạn bè.</p></section>
+            <section class="play-guide__card"><h4>02 · Chọn bộ vai và sẵn sàng</h4><p>Chủ phòng chọn số lượng dưới mỗi lá bài rồi bấm <strong>Lưu bộ vai</strong>. Tổng số vai phải bằng số người trong phòng, từ 5 đến 20 người. Cần ít nhất 1 Sói, số Sói ít hơn số người ngoài phe Sói; mỗi vai đặc biệt tối đa 1.</p><p>Mọi người bấm <strong>Sẵn sàng</strong>, sau đó chủ phòng bấm <strong>Vào game</strong>. Thay đổi bộ vai sẽ hủy trạng thái sẵn sàng.</p></section>
+            <section class="play-guide__card"><h4>03 · Nhận vai bí mật</h4><p>Ván có <strong>10 giây chuẩn bị</strong>. Lá bài của bạn tự hiện trong 5 giây đầu rồi tự đóng. Bấm <strong>Xem vai</strong> để đọc lại bất cứ lúc nào; đừng để người khác nhìn thấy màn hình.</p><p>Nhân vật quanh lửa trại được chọn ngẫu nhiên, không cho biết vai của người chơi.</p></section>
+            <section class="play-guide__card"><h4>04 · Hành động trong đêm</h4><p>Thứ tự: <strong>Bảo vệ 20 giây → Sói 30 giây → Tiên tri 20 giây → Phù thủy 30 giây</strong>, rồi bình minh. Chỉ người có vai được gọi mới có thể dùng kỹ năng.</p><p>Nhấp nhân vật để chọn mục tiêu có viền sáng, sau đó bấm nút xác nhận. Có thể dùng ô chọn thay thế. Không hành động trước khi hết giờ nghĩa là bỏ lượt. Các lượt vẫn diễn ra dù vai đó đã chết để tránh lộ thông tin.</p></section>
+            <section class="play-guide__card"><h4>05 · Kỹ năng cần nhớ</h4><ul><li><strong>Sói:</strong> xem mục tiêu của đồng đội trong bảng riêng. Bầy chỉ giết 1 người mỗi đêm; theo đa số, hòa thì chọn ngẫu nhiên giữa các mục tiêu đồng hạng. Có thể chọn bản thân làm nạn nhân, không phải chết ngay.</li><li><strong>Bảo vệ:</strong> được tự bảo vệ nhưng không chọn cùng người hai đêm liên tiếp.</li><li><strong>Tiên tri:</strong> soi 1 người mỗi đêm, kết quả chỉ bạn thấy và không thể soi lại trong cùng đêm.</li><li><strong>Phù thủy:</strong> có 1 bình cứu và 1 bình độc cho cả ván, được dùng cả hai cùng đêm. Bấm cứu để cứu nạn nhân Sói mà không biết danh tính; muốn giết thì bật bình độc, chọn người rồi xác nhận. Độc xuyên bảo vệ và không bị bình cứu hóa giải.</li><li><strong>Thợ săn:</strong> khi bị Sói giết hoặc treo cổ, có 20 giây bắn 1 người hoặc bỏ phát bắn. Trúng độc hay rời ván không được bắn.</li></ul></section>
+            <section class="play-guide__card"><h4>06 · Thảo luận và bỏ phiếu</h4><p>Ban ngày có <strong>2 phút</strong> thảo luận và bỏ phiếu kín. Nhấp nhân vật rồi bấm <strong>Bỏ phiếu</strong>; muốn không chọn ai thì bấm <strong>Phiếu trắng</strong>. Được đổi phiếu trước khi hết giờ.</p><p>Khi mọi người còn sống đều đã vote, kể cả phiếu trắng, thời gian rút còn tối đa 5 giây. Hết giờ công bố đồng loạt: người nhiều phiếu nhất bị loại, hòa thì không loại ai. Người chết chỉ theo dõi và không còn là mục tiêu.</p></section>
+            <section class="play-guide__card"><h4>07 · Nhật ký, chat và chơi lại</h4><p>Bấm <strong>Nhật ký</strong> trên thanh đầu màn hình để đọc lại diễn biến. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói; người khác không đọc được. Các phe có thể tự dùng kênh nói chuyện bên ngoài.</p><p>Chủ phòng bấm <strong>Chơi lại</strong> để mở biểu quyết 30 giây. Cần hơn một nửa người thật đồng ý; người chết vẫn được vote, bot không tính. Đủ phiếu sẽ hủy ván và về phòng chờ, giữ mã phòng cùng bộ vai; mọi người cần sẵn sàng lại.</p></section>
+            <section class="play-guide__card"><h4>08 · Ai giành chiến thắng?</h4><ul><li><strong>Phe Dân:</strong> loại hết Sói.</li><li><strong>Phe Sói:</strong> số Sói sống bằng hoặc vượt số người ngoài phe Sói còn sống.</li><li><strong>Phe thứ ba — Thằng ngu:</strong> thắng ngay khi bị bỏ phiếu loại. Chết vì Sói, độc hay đạn không được tính là thắng.</li></ul><p>Hết ván sẽ công khai các vai. Kết quả chỉ giữ tạm 60 giây rồi về phòng chờ; nhật ký và chat không được lưu sau trận.</p></section>
           </div>
         </div>
       </div>
@@ -378,7 +389,7 @@
           <div class="user-avatar-menu__header">
             <span class="muted">Tùy chọn</span>
           </div>
-          <button class="btn btn--ghost btn--sm btn--menu" id="resetRoom-game" type="button" hidden>↩ Về sảnh chờ</button>
+          <button class="btn btn--ghost btn--sm btn--menu" id="resetRoom-game" type="button" hidden>Đề nghị chơi lại</button>
           <button class="btn btn--ghost btn--sm btn--menu" id="logoutButton-game" type="button" hidden>Đăng xuất</button>
         </div>
       </details>
@@ -455,12 +466,17 @@
 
       <!-- Khung tương tác chính: Chọn mục tiêu & Gửi hành động -->
       <div class="game-hud-controls">
-        <button id="blankVote" type="button" class="btn btn--ghost btn--sm" hidden>Phiếu trắng</button>
         <button id="hunterSkip" type="button" class="btn btn--ghost btn--sm" hidden>Bỏ phát bắn</button>
         <form id="onlineActionForm" class="hud-action-form">
+          <div class="hud-target-fields">
           <label for="onlineTarget" class="hud-target-label">Mục tiêu:</label>
           <select id="onlineTarget" class="hud-select"></select>
+          <span id="targetSelection" class="target-selection" role="status"></span>
+          </div>
+          <div class="hud-vote-buttons">
+          <button id="blankVote" type="button" class="btn btn--ghost btn--sm" hidden>Phiếu trắng</button>
           <button id="onlineSubmit" type="submit" class="btn btn--primary btn--hud">Gửi lựa chọn</button>
+          </div>
         </form>
 
         <!-- Điều khiển của Phù thủy -->
@@ -476,7 +492,7 @@
 
       <!-- Nút rời phòng nằm cố định ở góc bên phải góc dưới -->
       <div class="game-hud-leave">
-        <button id="suicideGame" class="btn btn--danger btn--sm" type="button">Sói tự kết liễu</button>
+        <button id="requestReplay" class="btn btn--ghost btn--sm" type="button" hidden>Chơi lại</button>
         <button class="btn btn--danger btn--sm" id="leaveRoom-game" type="button" title="Rời khỏi phòng">🚪 Rời phòng</button>
       </div>
 
@@ -484,6 +500,13 @@
     </div>
   </footer>
 
+  <section id="replayPanel" class="replay-panel" hidden aria-labelledby="replayHeading">
+    <h3 id="replayHeading">Chơi lại ván này?</h3>
+    <p id="replayStatus" role="status"></p>
+    <p id="replayCountdown"></p>
+    <button id="dismissReplay" class="btn btn--ghost btn--sm" type="button" hidden>Đóng</button>
+    <div class="tool-buttons"><button id="replayYes" class="btn btn--primary btn--sm" type="button">Đồng ý</button><button id="replayNo" class="btn btn--ghost btn--sm" type="button">Không đồng ý</button></div>
+  </section>
   <aside id="wolfChoices" class="wolf-choices" hidden aria-label="Mục tiêu của phe Sói"><strong>Sói đang chọn</strong><ul id="wolfChoicesList"></ul></aside>
   <details id="wolfChat" class="wolf-chat" hidden>
     <summary>Chat Sói <span id="wolfChatCount"></span><span class="wolf-chat__private">Riêng</span></summary>

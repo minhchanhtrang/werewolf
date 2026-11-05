@@ -35,7 +35,7 @@ export function createScene(sceneElement, onPlayerClick) {
     for (const [id, button] of buttons) {
       if (!ids.has(id)) { button.remove(); buttons.delete(id); }
     }
-    const selectedTarget = state.sleeping ? null : state.votes.get(state.selectedPlayerId);
+    const selectedTarget = state.targetId ?? (state.sleeping ? null : state.votes.get(state.selectedPlayerId));
     for (const [seat, player] of players.entries()) {
       let button = buttons.get(player.id);
       if (!button) {

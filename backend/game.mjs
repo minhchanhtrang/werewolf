@@ -75,7 +75,7 @@ function enter(game, phase, now) {
     night: "Đêm xuống. Người có kỹ năng thực hiện hành động theo vai của mình. Những người khác chờ bình minh.",
     guard: "Bảo vệ thức giấc, chọn một người để che chở qua đêm.",
     seer: "Tiên tri đang soi tìm sự thật trong bóng tối.",
-    hunter: "Thợ săn nâng súng lần cuối. Bạn có 20 giây để bắn hoặc hạ súng.",
+    hunter: "Thợ săn nâng súng lần cuối. Đếm ngược 20 giây để quyết định bắn hoặc hạ súng.",
     witch: "Đêm chưa kết thúc. Chờ lượt Phù thủy trước khi công bố bình minh.",
     dawn: "Bình minh ló rạng. Dân làng thức giấc và đếm lại những người còn sống."
   };

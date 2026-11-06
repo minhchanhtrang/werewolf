@@ -19,7 +19,7 @@ export function createVillageChat(send) {
   });
   return (room,busy)=>{
     const next=room?.villageChat||null;
-    if(next?.gameId!==current?.gameId){epoch++;sending=false;key='';input.value='';list.replaceChildren();status.textContent='';}
+    if(next?.gameId!==current?.gameId){epoch++;sending=false;key='';input.value='';list.replaceChildren();status.textContent='';panel.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');toggle.textContent='Mở chat';}
     current=next;panel.hidden=!current;input.disabled=!current?.canSend;button.disabled=!current?.canSend||busy||sending;
     input.placeholder=current?.canSend?'Nhắn với dân làng…':'Chỉ đọc · Chat mở khi thảo luận';
     if(!current)return;

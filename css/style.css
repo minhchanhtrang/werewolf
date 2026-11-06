@@ -1862,6 +1862,14 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
 @media (max-width: 650px) {
   #screen-game { --chat-space: max(0px, calc(100dvh - var(--game-header-height, 120px) - var(--game-footer-height, 112px) - 16px)); }
   #screen-game #villageChat.village-chat:not(.is-open) { height: auto; }
+  #screen-game #wolfChat.wolf-chat:not(.is-open) { height: auto; }
+  .wolf-chat__heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wolf-chat:not(.is-open) #wolfChatMessages,
+  .wolf-chat:not(.is-open) #wolfChatForm,
+  .wolf-chat:not(.is-open) #wolfChatStatus { display: none; }
+  #screen-game:has(#wolfChat:not([hidden]):not(.is-open)) #villageChat.is-open {
+    height: max(0px, calc(var(--chat-space) - var(--wolf-chat-height, 50px) - 8px));
+  }
   #screen-game:has(.village-chat:not(.is-open)) .wolf-chat {
     height: max(0px, calc(var(--chat-space) - var(--village-chat-height, 44px) - 8px));
   }

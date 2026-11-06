@@ -105,8 +105,10 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
     screen.style.setProperty("--game-header-height", document.querySelector(".game-hud-top").getBoundingClientRect().height + "px");
     screen.style.setProperty("--game-footer-height", footer.getBoundingClientRect().height + "px");
     screen.style.setProperty("--village-chat-height", villageChat.getBoundingClientRect().height + "px");
+    screen.style.setProperty("--wolf-chat-height", document.querySelector("#wolfChat").getBoundingClientRect().height + "px");
   });
   layoutObserver.observe(footer); layoutObserver.observe(villageChat);
+  layoutObserver.observe(document.querySelector("#wolfChat"));
   layoutObserver.observe(document.querySelector(".game-hud-top"));
 
   function render(game, id, busy) {

@@ -5,6 +5,13 @@ export function createWolfChat(send) {
   const input = document.querySelector("#wolfChatInput");
   const button = document.querySelector("#wolfChatSend");
   const status = document.querySelector("#wolfChatStatus");
+  const toggle = document.querySelector("#toggleWolfChat");
+  toggle.addEventListener("click", () => {
+    const open = panel.classList.toggle("is-open");
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.textContent = open ? "Thu gọn" : "Mở chat";
+    if (open) list.scrollTop = list.scrollHeight;
+  });
   let current = null, signature = "", sending = false, epoch = 0;
   form.addEventListener("submit", async event => {
     event.preventDefault();
@@ -23,6 +30,8 @@ export function createWolfChat(send) {
     if (next?.gameId !== current?.gameId || Boolean(next) !== Boolean(current)) {
       epoch++; sending = false; input.value = ""; status.textContent = ""; signature = "";
       list.replaceChildren();
+      panel.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false"); toggle.textContent = "Mở chat";
     }
     current = next;
     panel.hidden = !current;

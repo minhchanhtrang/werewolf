@@ -91,6 +91,10 @@ export function createOnlineGame(onAction) {
   }
   setInterval(updateTimer, 250);
   window.addEventListener("resize", scene.resize);
+  const footer = document.querySelector(".game-hud-bottom");
+  new ResizeObserver(() => {
+    document.querySelector("#screen-game").style.setProperty("--game-footer-height", footer.getBoundingClientRect().height + "px");
+  }).observe(footer);
 
   function render(game, id, busy) {
     currentBusy = busy;

@@ -1051,22 +1051,36 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
   border: 1px solid var(--gold);
   border-radius: var(--r-md);
   padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px 12px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.5);
 }
 .phase-notice-toast__inner h3 {
   font-size: 14px;
   color: var(--gold);
   margin: 0;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .phase-notice-toast__inner p {
   margin: 0;
   font-size: 13px;
   color: var(--text-primary);
-  flex: 1;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+.phase-notice-toast__inner > button { grid-column: 2; grid-row: 1; align-self: start; }
+@media (max-width: 650px) {
+  .phase-notice-toast { top: 8px; width: calc(100% - 16px); max-height: 35dvh; overflow-y: auto; }
+  .phase-notice-toast__inner { padding: 10px 12px; gap: 6px 8px; }
+  .phase-notice-toast__inner h3 { font-size: 13px; line-height: 1.4; }
+  .phase-notice-toast__inner p { font-size: 12px; }
+  .phase-notice-toast__inner > button { min-width: 32px; min-height: 32px; padding: 4px 8px; }
 }
 
 /* BOTTOM HUD INTERACTION BAR */

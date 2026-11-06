@@ -49,6 +49,18 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   const unchanged = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0], "If-None-Match": tag } });
   assert.equal(unchanged.status, 304);
   assert.equal((await api(1,"join",{code})).status,200);
+  assert.equal((await api(1,"kick",{userId:ids[0]})).status,403);
+  assert.equal((await api(0,"kick",{userId:ids[0]})).status,400);
+  assert.equal((await api(0,"kick",{userId:-1})).status,400);
+  assert.equal((await api(0,"kick",{userId:String(ids[1])})).status,400);
+  assert.equal((await api(2,"create",{})).status,200);
+  assert.equal((await api(0,"kick",{userId:ids[2]})).status,404);
+  assert.ok((await api(2,"current")).data.room);
+  await api(2,"leave",{});
+  assert.equal((await api(0,"kick",{userId:ids[1]})).status,200);
+  assert.equal((await api(1,"current")).data.room,null);
+  assert.equal((await api(0,"kick",{userId:ids[1]})).status,404);
+  await api(1,"join",{code});
   assert.equal((await api(0,"start",{})).status,409);
   for(let i=0;i<3;i++){
     const added=await api(0,"bots",{fill:true});
@@ -93,6 +105,10 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   await pool.query("UPDATE ww_rooms SET role_state=$1::jsonb WHERE code=$2", [JSON.stringify(chatGame),code]);
   assert.equal((await api(0,"wolf-chat",{gameId:secret.id,text:"private test"})).status,200);
   assert.equal((await api(1,"current")).data.room.wolfChat.messages[0].text,"private test");
+  const kickedDuringGame = await api(0,"kick",{userId:ids[1]});
+  assert.equal(kickedDuringGame.status,409);
+  assert.equal((await api(1,"current")).data.room.code,code);
+  assert.equal((await api(1,"current")).data.room.game.roster.find(p=>p.id===ids[1]).alive,true);
   chatGame.players[1].alive = false;
   await pool.query("UPDATE ww_rooms SET role_state=$1::jsonb WHERE code=$2", [JSON.stringify(chatGame),code]);
   assert.equal((await api(1,"current")).data.room.wolfChat,null);
@@ -101,6 +117,7 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   assert.equal((await api(0,"current")).data.room.game.myRole,started.data.room.game.myRole);
   await pool.query("UPDATE ww_rooms SET role_state=jsonb_set(role_state,'{phase}','\"ended\"'::jsonb) WHERE code=$1",[code]);
   assert.equal((await api(0,"current")).data.room.game.phase,"ended");
+  assert.equal((await api(0,"kick",{userId:ids[1]})).status,409);
   assert.equal((await pool.query("SELECT role_state FROM ww_rooms WHERE code=$1",[code])).rows[0].role_state,null);
   assert.equal((await api(1,"reset",{})).status,403);
   assert.equal((await api(0,"reset",{})).data.room.game,null);

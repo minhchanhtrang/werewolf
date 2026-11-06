@@ -47,6 +47,21 @@ const rolePanel    = document.querySelector("#myRolePanel");
 const roleCard     = document.querySelector("#roleCard");
 const roleToggle   = document.querySelector("#toggleRole");
 const rolePortrait = document.querySelector("#rolePortrait");
+function kickButton(member) {
+  const button = document.createElement("button");
+  button.type = "button"; button.className = "btn btn--danger btn--sm";
+  button.textContent = "Kick"; button.dataset.kickId = String(member.id);
+  button.dataset.kickName = member.username; button.disabled = busy;
+  button.setAttribute("aria-label", "Kick " + member.username + " khỏi phòng");
+  return button;
+}
+members.addEventListener("click", event => {
+  const button = event.target.closest("button[data-kick-id]");
+  if (!button || busy || room?.game || room?.host_id !== authState.user?.id) return;
+  if (confirm("Kick " + button.dataset.kickName + " khỏi phòng chờ?")) {
+    update("kick", { userId: Number(button.dataset.kickId) });
+  }
+});
 
 function hideRole() {
   roleCard.hidden = true;
@@ -396,6 +411,9 @@ function render() {
       : member.ready ? "Sẵn sàng" : "Đang chờ";
     item.classList.toggle("is-ready", member.ready);
     item.append(name, status);
+    if (host && !dealt && !member.bot && member.id !== user?.id) {
+      item.append(kickButton(member));
+    }
     members.append(item);
   });
 

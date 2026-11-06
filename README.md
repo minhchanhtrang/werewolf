@@ -1,5 +1,9 @@
 # Ma Sói · Đêm bên lửa trại
 
+## Quản lý người chơi
+
+Chủ phòng có nút Kick cạnh người chơi thật, chỉ trong phòng chờ. Khi đang chơi hoặc xem kết quả không thể kick. Cần xác nhận trước khi kick; người bị kick trở về sảnh. Không thể kick bản thân hoặc người thuộc phòng khác. Kick không cấm tham gia lại bằng mã phòng.
+
 Game web pixel art 2.5D dùng JavaScript, Node.js và PostgreSQL.
 
 ## Chạy trên máy

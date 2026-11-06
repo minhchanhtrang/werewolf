@@ -16,6 +16,17 @@ async function resetToWaiting(db, code) {
   await db.query("UPDATE ww_room_members SET ready=FALSE WHERE room_code=$1", [code]);
   forgetResult(code);
 }
+async function removeGameMember(db, code, game, userId) {
+  if (!game) return;
+  advanceGame(game);
+  leaveGame(game, userId);
+  if (game.replayVote?.status === "open") {
+    game.replayVote.voters = game.replayVote.voters.filter(id => id !== userId);
+    delete game.replayVote.votes[userId];
+  }
+  if (game.phase !== "ended" && settleReplay(game)) await resetToWaiting(db, code);
+  else await persistGame(db, code, game);
+}
 
 async function currentRoom(db, userId) {
   // Một câu truy vấn để ảnh chụp phòng và thành viên nhất quán.
@@ -42,7 +53,7 @@ async function currentRoom(db, userId) {
 export function createRooms(pool) {
   return async (request, response, pathname) => {
     const actions = {
-      "/api/rooms/current": "GET", "/api/rooms/create": "POST",
+      "/api/rooms/current": "GET", "/api/rooms/create": "POST", "/api/rooms/kick": "POST",
       "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST", "/api/rooms/replay-vote": "POST",
       "/api/rooms/bots": "POST", "/api/rooms/config": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
@@ -140,6 +151,12 @@ export function createRooms(pool) {
               await persistGame(client, code, game);
             }
           }
+        } else if (pathname.endsWith("/kick")) {
+          if (room.rows[0].host_id !== user.id) throw fault(403, "Chỉ chủ phòng được kick người chơi.");
+          if (room.rows[0].role_state || finishedResult(code)) throw fault(409, "Chỉ được kick người chơi trong phòng chờ.");
+          if (!Number.isSafeInteger(body.userId) || body.userId <= 0 || body.userId === user.id) throw fault(400, "Chọn người chơi khác trong phòng.");
+          const removed = await client.query("DELETE FROM ww_room_members WHERE user_id=$1 AND room_code=$2 RETURNING user_id", [body.userId, code]);
+          if (!removed.rows.length) throw fault(404, "Người chơi không còn trong phòng này.");
         } else if (pathname.endsWith("/replay-vote")) {
           const game = room.rows[0].role_state;
           advanceGame(game);
@@ -160,17 +177,7 @@ export function createRooms(pool) {
           if (typeof body.ready !== "boolean") throw fault(400, "Trạng thái sẵn sàng không hợp lệ.");
           await client.query("UPDATE ww_room_members SET ready=$1 WHERE user_id=$2", [body.ready, user.id]);
         } else {
-          if (room.rows[0].role_state) {
-            const game = room.rows[0].role_state;
-            advanceGame(game);
-            leaveGame(game, user.id);
-            if (game.replayVote?.status === "open") {
-              game.replayVote.voters = game.replayVote.voters.filter(id => id !== user.id);
-              delete game.replayVote.votes[user.id];
-            }
-            if (game.phase !== "ended" && settleReplay(game)) await resetToWaiting(client, code);
-            else await persistGame(client, code, game);
-          }
+          await removeGameMember(client, code, room.rows[0].role_state, user.id);
           await client.query("DELETE FROM ww_room_members WHERE user_id=$1", [user.id]);
           const remaining = await client.query("SELECT user_id FROM ww_room_members WHERE room_code=$1 ORDER BY joined_at,user_id LIMIT 1", [code]);
           if (!remaining.rows.length) {

@@ -705,6 +705,7 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 }
 
 .room-members li {
+  position: relative;
   background: rgba(255,255,255,.04);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
@@ -717,7 +718,8 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 
 .room-members strong { font-size: 14px; overflow-wrap: anywhere; }
 .room-members span   { font-size: 11px; color: var(--text-muted); }
-.room-members .room-kick { align-self: flex-end; width: auto; flex: none; padding: 4px 9px; font-size: 11px; line-height: 1.4; justify-content: center; }
+.room-members li:has(button[data-kick-id]) { padding-right: 68px; }
+.room-members button[data-kick-id] { position: absolute; right: 12px; top: 12px; display: inline-flex; width: 42px; min-width: 42px; max-width: 42px; height: 24px; min-height: 24px; padding: 0; margin: 0; flex: none; font-size: 11px; line-height: 1; align-items: center; justify-content: center; border-radius: 5px; }
 
 .room-members .is-ready {
   border-color: rgba(76,175,128,.4);

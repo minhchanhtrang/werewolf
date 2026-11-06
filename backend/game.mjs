@@ -56,6 +56,14 @@ function winner(game) {
 }
 
 function enter(game, phase, now) {
+  if (game.turnBased) {
+    const roleForPhase = { guard: "guard", night: "wolf", seer: "seer", witch: "witch" };
+    const nextPhase = { guard: "night", night: "seer", seer: "witch" };
+    while (roleForPhase[phase] && !game.players.some(player => player.role === roleForPhase[phase])) {
+      if (phase === "witch") { resolveNight(game, now); return; }
+      phase = nextPhase[phase];
+    }
+  }
   const outcome = ["revealed", "dawn"].includes(phase) ? game.history.at(-1)?.text + " " : "";
   game.phase = phase;
   game.phaseId++;

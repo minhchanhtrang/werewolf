@@ -13,8 +13,8 @@ test("10 giây nhận vai chặn kỹ năng, chỉ gửi vai riêng, sau đó Đ
   assert.throws(()=>act(game,1,{phaseId:game.phaseId,targetId:2}));
   advanceGame(game,10999); assert.equal(game.phase,"intro");
   assert.deepEqual(game.actions,{});
-  advanceGame(game,11000); assert.equal(game.phase,"guard"); assert.equal(game.day,1);
-  assert.equal(game.deadline,31000);
+  advanceGame(game,11000); assert.equal(game.phase,"night"); assert.equal(game.day,1);
+  assert.equal(game.deadline,41000);
 });
 
 test("Lá bài mở một lần, tự đóng sau 5 giây, không mở lại do polling",()=>{

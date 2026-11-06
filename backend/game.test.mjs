@@ -42,7 +42,7 @@ test("Bình độc xuyên Bảo vệ, cứu không chống độc",()=>{
   assert.ok(g.players[8].alive); assert.equal(g.players[7].alive,false);
 });
 
-test("Vai chết/vai không được chọn vẫn có đủ lượt và thời gian như nhau",()=>{
+test("Vai được chia nhưng đã chết vẫn có đủ lượt và thời gian như khi còn sống",()=>{
   const a=fixture(), b=fixture(); b.players[4].alive=false; b.players[2].alive=false; b.players[3].alive=false;
   for(let i=0;i<4;i++) { assert.equal(a.phase,b.phase); assert.equal(a.deadline-a.phaseStartedAt,b.deadline-b.phaseStartedAt); next(a); next(b); }
   assert.equal(a.phase,"dawn"); assert.equal(b.phase,"dawn");
@@ -143,9 +143,24 @@ test("Phiếu trắng không tính là mục tiêu; người chết không đư�
 test("Thợ săn bắn xong mới xét thắng; quá giờ thì bỏ phát bắn",()=>{
   const g=fixture(["wolf","hunter","villager","villager","villager"]);
   g.players[3].alive=g.players[4].alive=false;
-  next(g); action(g,1,2); next(g); next(g); next(g);
+  action(g,1,2); next(g);
   assert.equal(g.phase,"hunter"); assert.equal(g.winner,null);
   action(g,2,1); next(g); assert.equal(g.winner,"villagers");
   const h=fixture(); voting(h); action(h,3,6); next(h); next(h);
   assert.equal(h.phase,"revealed"); assert.equal(h.hunterPending,null);
+});
+
+test("Bỏ lượt và log vai không được chia; giữ lượt vai đã chết ở mọi bộ vai",()=>{
+  const optional=[['guard','guard','Bảo vệ'],['seer','seer','Tiên tri'],['witch','witch','Phù thủy']];
+  for(let mask=0;mask<8;mask++) for(const dead of [false,true]) {
+    const chosen=optional.filter((_,i)=>mask & (1<<i));
+    const roles=['wolf',...chosen.map(([role])=>role),...Array(5).fill('villager')];
+    const g=fixture(roles);
+    if(dead) for(const p of g.players) if(chosen.some(([role])=>role===p.role)) p.alive=false;
+    const phases=[];
+    for(let n=0;n<8 && g.phase!=='voting';n++){ phases.push(g.phase); next(g); }
+    assert.equal(g.phase,'voting');
+    assert.deepEqual(phases,[...(mask&1?['guard']:[]),'night',...(mask&2?['seer']:[]),...(mask&4?['witch']:[]),'dawn']);
+    for(let i=0;i<optional.length;i++) if(!(mask&(1<<i))) assert.ok(g.history.every(e=>!e.text.includes(optional[i][2])));
+  }
 });

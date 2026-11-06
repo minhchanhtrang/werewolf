@@ -10,6 +10,7 @@ import { readWolfChat, sendWolfChat } from "./wolf-chat.mjs";
 import { roomTag } from "./http-cache.mjs";
 import { readVillageChat, sendVillageChat } from "./village-chat.mjs";
 import { requestReplay, voteReplay, settleReplay } from "./replay.mjs";
+import { touchRoom } from "./room-cleanup.mjs";
 
 const fault = (status, message) => Object.assign(new Error(message), { status });
 async function resetToWaiting(db, code) {
@@ -68,7 +69,10 @@ export function createRooms(pool) {
       if (!user) throw fault(401, "Hãy đăng nhập để vào phòng.");
       if (request.method === "GET") {
         const membership = await pool.query("SELECT room_code FROM ww_room_members WHERE user_id=$1", [user.id]);
-        if (membership.rows[0]) await advanceRoom(pool, membership.rows[0].room_code);
+        if (membership.rows[0]) {
+          await touchRoom(pool, membership.rows[0].room_code);
+          await advanceRoom(pool, membership.rows[0].room_code);
+        }
         client = await pool.connect();
         await client.query("BEGIN");
         if (membership.rows[0]) await client.query("SELECT code FROM ww_rooms WHERE code=$1 FOR SHARE", [membership.rows[0].room_code]);
@@ -192,6 +196,7 @@ export function createRooms(pool) {
         }
       }
       const room = await currentRoom(client, user.id);
+      if (room) await touchRoom(client, room.code);
       await client.query("COMMIT");
       return json(response, 200, { room }, request, { ETag: roomTag(room) });
     } catch (error) {

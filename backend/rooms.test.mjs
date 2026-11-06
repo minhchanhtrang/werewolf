@@ -46,8 +46,10 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   const code=created.data.room.code;
   const first = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0] } });
   const tag = first.headers.get("ETag"); await first.json();
+  await pool.query("UPDATE ww_rooms SET last_active_at=NOW()-INTERVAL '2 minutes' WHERE code=$1", [code]);
   const unchanged = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0], "If-None-Match": tag } });
   assert.equal(unchanged.status, 304);
+  assert.equal((await pool.query("SELECT last_active_at > NOW()-INTERVAL '10 seconds' AS fresh FROM ww_rooms WHERE code=$1", [code])).rows[0].fresh, true);
   assert.equal((await api(1,"join",{code})).status,200);
   assert.equal((await api(1,"kick",{userId:ids[0]})).status,403);
   assert.equal((await api(0,"kick",{userId:ids[0]})).status,400);

@@ -22,7 +22,7 @@ export function createWolfChat(send) {
     const next = room?.wolfChat || null;
     if (next?.gameId !== current?.gameId || Boolean(next) !== Boolean(current)) {
       epoch++; sending = false; input.value = ""; status.textContent = ""; signature = "";
-      list.replaceChildren(); panel.open = false;
+      list.replaceChildren();
     }
     current = next;
     panel.hidden = !current;

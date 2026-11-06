@@ -1,6 +1,6 @@
 import { advanceGame } from "./game.mjs";
 import { persistGame, pruneResults, activeRooms, forgetResult } from "./game-storage.mjs";
-import { pruneAbandonedRooms } from "./room-cleanup.mjs";
+import { pruneAbandonedRooms, trackedRooms, refreshTrackedRooms } from "./room-cleanup.mjs";
 
 export async function advanceRoom(pool, code, now) {
   const client = await pool.connect();
@@ -21,29 +21,37 @@ export async function advanceRoom(pool, code, now) {
   } finally { client.release(); }
 }
 
-export function startGameClock(pool) {
-  if (!pool) return;
+export function createClockTick(pool) {
   let initialized = false;
   let running = false;
   let lastCleanup = 0;
-  const timer = setInterval(async () => {
+  return async () => {
     if (running) return;
     running = true;
     pruneResults();
     try {
-      if (Date.now() - lastCleanup >= 30000) {
-        await pruneAbandonedRooms(pool);
-        lastCleanup = Date.now();
-      }
       if (!initialized) {
-        const rooms = await pool.query("SELECT code FROM ww_rooms WHERE role_state->>'version'='1'");
-        for (const room of rooms.rows) activeRooms.add(room.code);
+        const rooms = await pool.query("SELECT code,role_state->>'version' AS version FROM ww_rooms");
+        for (const room of rooms.rows) {
+          trackedRooms.add(room.code);
+          if (room.version === "1") activeRooms.add(room.code);
+        }
         initialized = true;
+      }
+      if (trackedRooms.size && Date.now() - lastCleanup >= 30000) {
+        await pruneAbandonedRooms(pool);
+        await refreshTrackedRooms(pool);
+        lastCleanup = Date.now();
       }
       for (const code of [...activeRooms]) await advanceRoom(pool, code);
     } catch { console.error("Đồng hồ phòng tạm gián đoạn; sẽ tự thử lại."); }
     finally { running = false; }
-  }, 1000);
+  };
+}
+
+export function startGameClock(pool) {
+  if (!pool) return;
+  const timer = setInterval(createClockTick(pool), 1000);
   timer.unref();
   return timer;
 }

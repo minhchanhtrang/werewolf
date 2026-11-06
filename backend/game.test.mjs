@@ -133,11 +133,23 @@ test("Sói chọn theo đa số; Thợ săn trúng độc cùng lượt không �
   assert.equal(g.phase,"dawn");
 });
 
-test("Phiếu trắng không tính là mục tiêu; người chết không được bỏ phiếu",()=>{
-  const g=fixture(); voting(g); action(g,1,null,"blank"); action(g,3,8); next(g);
+test("Phiếu trắng dẫn đầu hoặc hòa người nhiều phiếu nhất thì không loại ai",()=>{
+  for(const [blank, targeted, dies] of [[3,1,false],[1,1,false],[1,2,true],[3,0,false],[0,0,false]]) {
+    const g=fixture(); voting(g);
+    for(let i=1;i<=blank;i++) action(g,i,null,"blank");
+    for(let i=blank+1;i<=blank+targeted;i++) action(g,i,8);
+    next(g); assert.equal(g.players[7].alive,!dies);
+    assert.equal(g.revealedVotes.filter(([,target])=>target===null).length,blank);
+    if(dies) assert.throws(()=>action(g,8,1));
+  }
+});
+
+test("Phiếu trắng của người đã rời ván không được tính",()=>{
+  const g=fixture(); voting(g);
+  action(g,1,null,"blank"); action(g,3,8);
+  leaveGame(g,1); next(g);
   assert.equal(g.players[7].alive,false);
   assert.deepEqual(g.revealedVotes,[[3,8]]);
-  assert.throws(()=>action(g,8,1));
 });
 
 test("Thợ săn bắn xong mới xét thắng; quá giờ thì bỏ phát bắn",()=>{

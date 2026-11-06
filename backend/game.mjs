@@ -85,9 +85,9 @@ function enter(game, phase, now) {
   log(game, messages[phase]);
 }
 
-function topTarget(votes, randomTie = false) {
+function topTarget(votes, randomTie = false, includeBlank = false) {
   const counts = new Map();
-  for (const target of Object.values(votes).filter(target => target != null)) counts.set(target, (counts.get(target) || 0) + 1);
+  for (const target of Object.values(votes).filter(target => includeBlank || target != null)) counts.set(target, (counts.get(target) || 0) + 1);
   const ranked = [...counts].sort((a, b) => b[1] - a[1]);
   if (!ranked.length) return null;
   if (randomTie) return choose(ranked.filter(entry => entry[1] === ranked[0][1]))[0];
@@ -239,12 +239,12 @@ export function advanceGame(game, now = Date.now()) {
     } else if (game.phase === "voting") {
       const votes = Object.fromEntries(Object.entries(game.votes).filter(([actorId, targetId]) =>
         game.players.some(player => player.id === Number(actorId) && player.alive)
-        && game.players.some(player => player.id === targetId && player.alive)));
-      const targetId = topTarget(votes);
+        && (targetId === null || game.players.some(player => player.id === targetId && player.alive))));
+      const targetId = topTarget(votes, false, true);
       const target = game.players.find(player => player.id === targetId);
       game.revealedVotes = Object.entries(votes).map(([id, target]) => [Number(id), target]);
       if (target) target.alive = false;
-      log(game, target ? target.name + " bị loại sau bỏ phiếu." : "Hòa phiếu hoặc không có phiếu. Không ai bị loại.");
+      log(game, target ? target.name + " bị loại sau bỏ phiếu." : !Object.keys(votes).length ? "Không có phiếu. Không ai bị loại." : "Phiếu trắng dẫn đầu hoặc hòa phiếu. Không ai bị loại.");
       if (target?.role === "idiot") game.winner = "idiot";
       if (game.turnBased && target?.role === "hunter") callHunter(game, target.id, "revealed", at);
       else if (!winner(game)) enter(game, "revealed", at);

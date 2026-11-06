@@ -33,7 +33,7 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 - Sói được chọn chính mình làm nạn nhân trong lượt săn, không có nút chết tức thì. Phiếu này tính chung với phiếu của các Sói khác; có thể được Bảo vệ/Phù thủy cứu như nạn nhân khác. Không chọn Sói đồng đội.
 - Nhấp nhân vật sẽ viền sáng mục tiêu và đồng bộ ô chọn; bấm nút hành động để xác nhận. Bộ vai chỉ áp dụng cho ván mới; khi nâng cấp hãy về phòng chờ rồi bắt đầu lại.
 - Phòng chờ: mã phòng/công cụ bên trái; nút sẵn sàng và vào game ở trên, tiếp theo là lá bài chọn số lượng và danh sách người tham gia. Thợ săn và Thằng ngu đã có ảnh vai riêng. Nhãn phe Dân màu xanh, Sói màu đỏ, phe thứ ba màu tím.
-- Phiếu giữ kín đến khi công bố; hòa không loại. Vai của người khác chỉ công khai khi kết thúc.
+- Phiếu giữ kín đến khi công bố; phiếu trắng dẫn đầu hoặc hòa thì không loại ai. Vai của người khác chỉ công khai khi kết thúc.
 - Ngoại hình ngẫu nhiên và đồng bộ suốt ván; có 10 mẫu nhân vật.
 - Nhật ký đọc tại nút Nhật ký. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói sống; tối đa 30 tin trong RAM, xóa khi hết ván. Chưa có tính năng kết bạn.
 - Dân thắng khi hết Sói. Sói thắng khi số Sói sống bằng hoặc vượt số người phe Dân sống.

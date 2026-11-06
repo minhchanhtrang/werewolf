@@ -2,6 +2,8 @@
 
 ## Quản lý người chơi
 
+Chat dân làng nằm dưới khung làng, tối đa 50 tin trong RAM. Người còn sống được gửi khi thảo luận ban ngày; người chết và ban đêm chỉ đọc. Giới hạn 300 ký tự/tin, không cần chờ giữa hai tin ở cả chat chung và chat Sói. Tin được xóa khi kết thúc/chơi lại/rời hết phòng; không lưu vào CSDL. Trên điện thoại có nút Mở chat để tiết kiệm chỗ.
+
 Chủ phòng có nút Kick cạnh người chơi thật, chỉ trong phòng chờ. Khi đang chơi hoặc xem kết quả không thể kick. Cần xác nhận trước khi kick; người bị kick trở về sảnh. Không thể kick bản thân hoặc người thuộc phòng khác. Kick không cấm tham gia lại bằng mã phòng.
 
 Game web pixel art 2.5D dùng JavaScript, Node.js và PostgreSQL.

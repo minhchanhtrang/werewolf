@@ -263,7 +263,7 @@
             <section class="play-guide__card"><h4>04 · Hành động trong đêm</h4><p>Thứ tự: <strong>Bảo vệ 20 giây → Sói 30 giây → Tiên tri 20 giây → Phù thủy 30 giây</strong>, rồi bình minh. Chỉ người có vai được gọi mới có thể dùng kỹ năng.</p><p>Nhấp nhân vật để chọn mục tiêu có viền sáng, sau đó bấm nút xác nhận. Có thể dùng ô chọn thay thế. Không hành động trước khi hết giờ nghĩa là bỏ lượt. Vai không được chia sẽ bỏ qua lượt và nhật ký. Vai có trong ván nhưng đã chết vẫn giữ lượt để tránh lộ thông tin.</p></section>
             <section class="play-guide__card"><h4>05 · Kỹ năng cần nhớ</h4><ul><li><strong>Sói:</strong> xem mục tiêu của đồng đội trong bảng riêng. Bầy chỉ giết 1 người mỗi đêm; theo đa số, hòa thì chọn ngẫu nhiên giữa các mục tiêu đồng hạng. Có thể chọn bản thân làm nạn nhân, không phải chết ngay.</li><li><strong>Bảo vệ:</strong> được tự bảo vệ nhưng không chọn cùng người hai đêm liên tiếp.</li><li><strong>Tiên tri:</strong> soi 1 người mỗi đêm, kết quả chỉ bạn thấy và không thể soi lại trong cùng đêm.</li><li><strong>Phù thủy:</strong> có 1 bình cứu và 1 bình độc cho cả ván, được dùng cả hai cùng đêm. Bấm cứu để cứu nạn nhân Sói mà không biết danh tính; muốn giết thì bật bình độc, chọn người rồi xác nhận. Độc xuyên bảo vệ và không bị bình cứu hóa giải.</li><li><strong>Thợ săn:</strong> khi bị Sói giết hoặc treo cổ, có 20 giây bắn 1 người hoặc bỏ phát bắn. Trúng độc hay rời ván không được bắn.</li></ul></section>
             <section class="play-guide__card"><h4>06 · Thảo luận và bỏ phiếu</h4><p>Ban ngày có <strong>2 phút</strong> thảo luận và bỏ phiếu kín. Nhấp nhân vật rồi bấm <strong>Bỏ phiếu</strong>; muốn không chọn ai thì bấm <strong>Phiếu trắng</strong>. Được đổi phiếu trước khi hết giờ.</p><p>Khi mọi người còn sống đều đã vote, kể cả phiếu trắng, thời gian rút còn tối đa 5 giây. Hết giờ công bố đồng loạt: chỉ loại người có số phiếu cao nhất duy nhất và nhiều hơn phiếu trắng. Phiếu trắng dẫn đầu hoặc hòa thì không loại ai. Người chết chỉ theo dõi và không còn là mục tiêu.</p></section>
-            <section class="play-guide__card"><h4>07 · Nhật ký, chat và chơi lại</h4><p>Bấm <strong>Nhật ký</strong> trên thanh đầu màn hình để đọc lại diễn biến. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói; người khác không đọc được. Các phe có thể tự dùng kênh nói chuyện bên ngoài.</p><p>Chủ phòng bấm <strong>Chơi lại</strong> để mở biểu quyết 30 giây. Cần hơn một nửa người thật đồng ý; người chết vẫn được vote, bot không tính. Đủ phiếu sẽ hủy ván và về phòng chờ, giữ mã phòng cùng bộ vai; mọi người cần sẵn sàng lại.</p></section>
+            <section class="play-guide__card"><h4>07 · Nhật ký, chat và chơi lại</h4><p>Bấm <strong>Nhật ký</strong> trên thanh đầu màn hình để đọc lại diễn biến. Chat nhỏ góc dưới trái chỉ dành cho Sói còn sống khi còn ít nhất 2 Sói; người khác không đọc được. Chat dân làng nằm dưới khung làng: người còn sống được gửi trong lượt thảo luận, người đã chết và ban đêm chỉ đọc. Trên điện thoại bấm Mở chat. Tin chỉ giữ trong ván.</p><p>Chủ phòng bấm <strong>Chơi lại</strong> để mở biểu quyết 30 giây. Cần hơn một nửa người thật đồng ý; người chết vẫn được vote, bot không tính. Đủ phiếu sẽ hủy ván và về phòng chờ, giữ mã phòng cùng bộ vai; mọi người cần sẵn sàng lại.</p></section>
             <section class="play-guide__card"><h4>08 · Ai giành chiến thắng?</h4><ul><li><strong>Phe Dân:</strong> loại hết Sói.</li><li><strong>Phe Sói:</strong> số Sói sống bằng hoặc vượt số người ngoài phe Sói còn sống.</li><li><strong>Phe thứ ba — Thằng ngu:</strong> thắng ngay khi bị bỏ phiếu loại. Chết vì Sói, độc hay đạn không được tính là thắng.</li></ul><p>Hết ván sẽ công khai các vai. Kết quả chỉ giữ tạm 60 giây rồi về phòng chờ; nhật ký và chat không được lưu sau trận.</p></section>
           </div>
         </div>
@@ -451,9 +451,14 @@
         </div>
       </div>
 
+  <section id="villageChat" class="village-chat" aria-label="Chat dân làng" hidden>
+    <h3>Chat dân làng <button id="toggleVillageChat" class="village-chat__toggle" type="button" aria-expanded="false" aria-controls="villageChatMessages villageChatForm">Mở chat</button></h3>
+    <ol id="villageChatMessages" role="log" aria-live="polite" aria-label="Tin nhắn chung"></ol>
+    <form id="villageChatForm"><label class="wolf-chat__label" for="villageChatInput">Tin nhắn chung</label><input id="villageChatInput" maxlength="300" autocomplete="off" required placeholder="Nhắn với dân làng…"><button id="villageChatSend" type="submit" class="btn btn--primary btn--sm">Gửi</button></form>
+    <p id="villageChatStatus" role="status"></p>
+  </section>
     </section>
   </main>
-
   <!-- BOTTOM BAR: THANH TƯƠNG TÁC THEO TỪNG VAI (Bỏ phiếu, Sói cắn, Tiên tri soi, Bảo vệ...) -->
   <footer class="game-hud-bottom">
     <div class="game-hud-bottom__inner">

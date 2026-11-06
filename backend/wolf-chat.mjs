@@ -13,18 +13,16 @@ export function readWolfChat(game, userId) {
 
 export function clearWolfChat(gameId) { if (gameId) chats.delete(gameId); }
 
-export function sendWolfChat(game, userId, body, now = Date.now()) {
+export function sendWolfChat(game, userId, body) {
   const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
   if (!canWolfChat(game, userId)) fail(403, "Chỉ Sói còn sống được chat khi còn ít nhất 2 Sói sống.");
   if (body.gameId !== game.id) fail(409, "Ván đã thay đổi. Hãy gửi lại trong ván hiện tại.");
   if (typeof body.text !== "string") fail(400, "Tin nhắn không hợp lệ.");
   const text = body.text.trim();
   if (!text || text.length > 300 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(text)) fail(400, "Tin nhắn cần từ 1 đến 300 ký tự.");
-  const chat = chats.get(game.id) || { messages: [], sentAt: new Map(), sequence: 0 };
-  if (chat.sentAt.has(userId) && now - chat.sentAt.get(userId) < 2000) fail(429, "Chờ 2 giây trước khi gửi tin tiếp.");
+  const chat = chats.get(game.id) || { messages: [], sequence: 0 };
   const sender = game.players.find(player => player.id === userId);
   chat.messages.push({ id: ++chat.sequence, name: sender.name, text });
   chat.messages = chat.messages.slice(-30);
-  chat.sentAt.set(userId, now);
   chats.set(game.id, chat);
 }

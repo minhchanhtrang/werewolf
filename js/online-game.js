@@ -92,9 +92,13 @@ export function createOnlineGame(onAction) {
   setInterval(updateTimer, 250);
   window.addEventListener("resize", scene.resize);
   const footer = document.querySelector(".game-hud-bottom");
-  new ResizeObserver(() => {
-    document.querySelector("#screen-game").style.setProperty("--game-footer-height", footer.getBoundingClientRect().height + "px");
-  }).observe(footer);
+  const villageChat = document.querySelector("#villageChat");
+  const layoutObserver = new ResizeObserver(() => {
+    const screen = document.querySelector("#screen-game");
+    screen.style.setProperty("--game-footer-height", footer.getBoundingClientRect().height + "px");
+    screen.style.setProperty("--village-chat-height", villageChat.getBoundingClientRect().height + "px");
+  });
+  layoutObserver.observe(footer); layoutObserver.observe(villageChat);
 
   function render(game, id, busy) {
     currentBusy = busy;
@@ -183,7 +187,7 @@ export function createOnlineGame(onAction) {
       : "Đọc kết quả đêm trong diễn biến. Lượt bỏ phiếu tiếp theo sẽ tự bắt đầu.";
     document.querySelector("#onlinePhase").textContent = game.phase === "intro" ? "Chuẩn bị · Nhận vai" : (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
     document.querySelector("#onlineLiving").textContent = game.roster.filter(player => player.alive).length + "/" + game.roster.length + " còn sống";
-    document.querySelector("#onlineSeer").textContent = game.seerResult ? "Kết quả soi: Đêm " + game.seerResult.day + ": " + game.seerResult.text : "";
+    document.querySelector("#onlineSeer").textContent = game.seerResult ? "Kết quả soi.Đêm " + game.seerResult.day + ": " + game.seerResult.text : "";
     document.querySelector("#onlineTeam").textContent = game.myRole === "wolf"
       ? "Phe Sói: " + game.roster.filter(player => game.wolfIds.includes(player.id)).map(player => player.name).join(", ") : "";
     eligible = [];

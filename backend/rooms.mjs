@@ -8,6 +8,7 @@ import { persistGame, finishedResult, forgetResult } from "./game-storage.mjs";
 import { allowedOrigin } from "./origin.mjs";
 import { readWolfChat, sendWolfChat } from "./wolf-chat.mjs";
 import { roomTag } from "./http-cache.mjs";
+import { readVillageChat, sendVillageChat } from "./village-chat.mjs";
 import { requestReplay, voteReplay, settleReplay } from "./replay.mjs";
 
 const fault = (status, message) => Object.assign(new Error(message), { status });
@@ -46,14 +47,14 @@ async function currentRoom(db, userId) {
     code: row.code, host_id: row.host_id, capacity: MAX_PLAYERS, roleConfig: row.role_config,
     members: [...row.members, ...bots],
     game: privateRoleView(game, userId),
-    wolfChat: readWolfChat(game, userId)
+    wolfChat: readWolfChat(game, userId), villageChat: readVillageChat(game, userId)
   };
 }
 
 export function createRooms(pool) {
   return async (request, response, pathname) => {
     const actions = {
-      "/api/rooms/current": "GET", "/api/rooms/create": "POST", "/api/rooms/kick": "POST",
+      "/api/rooms/current": "GET", "/api/rooms/create": "POST", "/api/rooms/kick": "POST", "/api/rooms/village-chat": "POST",
       "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST", "/api/rooms/replay-vote": "POST",
       "/api/rooms/bots": "POST", "/api/rooms/config": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
@@ -162,6 +163,10 @@ export function createRooms(pool) {
           if (!game || game.phase === "ended") throw fault(409, "Ván đã kết thúc.");
           if (voteReplay(game, user.id, body)) await resetToWaiting(client, code);
           else await persistGame(client, code, game);
+        } else if (pathname.endsWith("/village-chat")) {
+          const game = room.rows[0].role_state;
+          if (advanceGame(game)) await persistGame(client, code, game);
+          sendVillageChat(game, user.id, body);
         } else if (pathname.endsWith("/wolf-chat")) {
           const game = room.rows[0].role_state;
           if (advanceGame(game)) await persistGame(client, code, game);

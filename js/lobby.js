@@ -5,6 +5,7 @@
 import { authState } from "./auth.js";
 import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
+import { createVillageChat } from "./village-chat.js";
 import { createRoleIntro } from "./role-intro.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
@@ -141,6 +142,7 @@ document.querySelector("#roleConfigForm").addEventListener("submit", async event
   } catch (error) { document.querySelector("#roleConfigStatus").textContent = error.message; }
 });
 const renderWolfChat = createWolfChat(body => update("wolf-chat", body));
+const renderVillageChat = createVillageChat(body => update("village-chat", body));
 
 const renderGame = createOnlineGame((targetId, kind) => {
   if (room?.game) update("act", { phaseId: room.game.phaseId, targetId, ...(kind ? { kind } : {}) });
@@ -275,6 +277,7 @@ function render() {
 
   renderGame(room?.game, user?.id, busy);
   renderWolfChat(room, busy);
+  renderVillageChat(room, busy);
   const activeGame = room?.game && room.game.phase !== "ended";
   const replay = activeGame ? room.game.replayVote : null;
   const openReplay = replay?.status === "open";

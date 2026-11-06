@@ -11,7 +11,7 @@ const fixture = () => ({ id: "chat-test", version: 1, phase: "night", players: [
   { id: 4, role: "wolf", alive: false, name: "Ghost" }
 ] });
 
-test("Chat Sói: không lộ cho Dân/người chết, chặn spam và sai ván", () => {
+test("Chat Sói: không lộ cho Dân/người chết, gửi liên tiếp và chặn sai ván", () => {
   const game = fixture();
   try {
     assert.ok(canWolfChat(game, 1));
@@ -21,7 +21,7 @@ test("Chat Sói: không lộ cho Dân/người chết, chặn spam và sai ván"
       assert.equal(readWolfChat(game, id), null);
       assert.throws(() => sendWolfChat(game, id, { gameId: game.id, text: "x" }), { status: 403 });
     }
-    assert.throws(() => sendWolfChat(game, 1, { gameId: game.id, text: "spam" }, 11000), { status: 429 });
+    assert.doesNotThrow(() => sendWolfChat(game, 1, { gameId: game.id, text: "Tin tiếp theo" }, 11000));
     assert.throws(() => sendWolfChat(game, 2, { gameId: "old", text: "x" }), { status: 409 });
     for (const text of [" ", "x".repeat(301), 5]) assert.throws(() => sendWolfChat(game, 2, { gameId: game.id, text }), { status: 400 });
     for (let i = 0; i < 40; i++) sendWolfChat(game, 2, { gameId: game.id, text: String(i) }, 20000 + i * 2000);

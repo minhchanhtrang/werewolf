@@ -1,6 +1,7 @@
 // Play visible role artwork only; keep the poster when playback is unavailable.
 const visible = new Set();
 const timers = new Map();
+const completed = new WeakSet();
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 function canPlay(video) { return visible.has(video) && !document.hidden && !video.hidden; }
 function stopSurprise(video) {
@@ -8,7 +9,7 @@ function stopSurprise(video) {
   video.pause(); video.classList.remove("is-playing");
 }
 function scheduleSurprise(video) {
-  if (timers.has(video) || video.classList.contains("is-playing") || video.error || reducedMotion.matches) return;
+  if (completed.has(video) || timers.has(video) || video.classList.contains("is-playing") || video.error || reducedMotion.matches) return;
   timers.set(video, setTimeout(() => {
     timers.delete(video);
     if (!canPlay(video) || reducedMotion.matches) return;
@@ -42,8 +43,8 @@ export function observeRoleVideo(video) {
       else stopSurprise(video);
     });
     video.addEventListener("ended", () => {
+      completed.add(video);
       stopSurprise(video);
-      if (canPlay(video)) scheduleSurprise(video);
     });
     video.addEventListener("error", () => stopSurprise(video));
   }

@@ -10,6 +10,31 @@ function fixture(roles = ["wolf","wolf","seer","guard","witch","hunter","idiot",
   return game;
 }
 const next = g => advanceGame(g,g.deadline);
+test("Nguyên nhân chết chỉ gửi cho chính nạn nhân, không lộ qua roster", () => {
+  for (const mode of ["wolf", "poison", "both", "healedPoison", "vote", "hunter"]) {
+    const g = fixture();
+    const victim = 8;
+    if (mode === "vote") { voting(g); action(g,1,victim); }
+    else if (mode === "hunter") {
+      g.phase = "hunter"; g.hunterPending = 6; g.hunterResume = "revealed"; g.hunterShot = victim;
+    } else {
+      g.phase = "witch";
+      g.pendingAttackId = mode === "poison" ? null : victim;
+      g.witchChoice = { heal: mode === "healedPoison", poisonId: mode === "wolf" ? null : victim };
+    }
+    next(g);
+    const reason = gameView(g,victim).myDeathReason;
+    assert.ok(reason);
+    if (["wolf","both"].includes(mode)) assert.match(reason,/Sói/);
+    if (["poison","both","healedPoison"].includes(mode)) assert.match(reason,/độc/);
+    if (mode === "healedPoison") assert.doesNotMatch(reason,/Sói/);
+    if (mode === "vote") assert.match(reason,/bỏ phiếu/);
+    if (mode === "hunter") assert.match(reason,/Thợ săn/);
+    const other = gameView(g,9);
+    assert.equal(other.myDeathReason,null);
+    assert.ok(other.roster.every(p => !("deathReason" in p)));
+  }
+});
 const action = (g,id,targetId,kind) => act(g,id,{phaseId:g.phaseId,targetId,kind});
 function voting(g) { let n=0; while(g.phase!=="voting" && g.phase!=="ended" && n++<10) next(g); assert.equal(g.phase,"voting"); }
 

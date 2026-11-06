@@ -206,7 +206,13 @@ function resolveNight(game, now) {
     deaths.add(choice.targetId);
   }
   const victims = game.players.filter(player => player.alive && deaths.has(player.id));
-  for (const player of victims) player.alive = false;
+  for (const player of victims) {
+    player.alive = false;
+    const causes = [];
+    if (player.id === game.pendingAttackId && choice?.kind !== "heal" && !choice?.heal) causes.push("bị Sói tấn công");
+    if (player.id === choice?.poisonId || (choice?.kind === "poison" && player.id === choice.targetId)) causes.push("trúng bình độc của Phù thủy");
+    player.deathReason = "Bạn đã chết do " + causes.join(" và ") + ".";
+  }
   // Không công khai ai được cứu, loại bình hay danh tính người dùng kỹ năng.
   log(game, victims.length ? victims.map(player => player.name).join(", ") + " đã chết trong đêm." : "Đêm qua không ai bị loại.");
   game.pendingAttackId = null;
@@ -244,7 +250,7 @@ export function advanceGame(game, now = Date.now()) {
       const targetId = topTarget(votes, false, true);
       const target = game.players.find(player => player.id === targetId);
       game.revealedVotes = Object.entries(votes).map(([id, target]) => [Number(id), target]);
-      if (target) target.alive = false;
+      if (target) { target.alive = false; target.deathReason = "Bạn bị dân làng bỏ phiếu loại."; }
       log(game, target ? target.name + " bị loại sau bỏ phiếu." : !Object.keys(votes).length ? "Không có phiếu. Không ai bị loại." : "Phiếu trắng dẫn đầu hoặc hòa phiếu. Không ai bị loại.");
       if (target?.role === "idiot") game.winner = "idiot";
       if (game.turnBased && target?.role === "hunter") callHunter(game, target.id, "revealed", at);
@@ -277,7 +283,7 @@ export function advanceGame(game, now = Date.now()) {
       enter(game, "witch", at);
     } else if (game.phase === "hunter") {
       const victim = game.players.find(p => p.id === game.hunterShot && p.alive);
-      if (victim) { victim.alive = false; log(game, victim.name + " bị Thợ săn bắn."); }
+      if (victim) { victim.alive = false; victim.deathReason = "Bạn bị Thợ săn bắn."; log(game, victim.name + " bị Thợ săn bắn."); }
       game.hunterPending = null;
       if (!winner(game)) enter(game, game.hunterResume, at);
     } else if (game.phase === "witch") {
@@ -293,6 +299,7 @@ export function advanceGame(game, now = Date.now()) {
 export function gameView(game, userId) {
   const me = game.players.find(player => player.id === userId);
   return {
+    myDeathReason: me && !me.alive ? me.deathReason || null : null,
     id: game.id, phase: game.phase, phaseId: game.phaseId, day: game.day, startedAt: game.startedAt,
     phaseNotice: game.phaseNotice || null, replayVote: replayView(game, userId),
     isTest: game.isTest, myRole: me?.role || null, selfAlive: Boolean(me?.alive),
@@ -326,6 +333,7 @@ export function leaveGame(game, userId) {
   const player = game.players.find(player => player.id === userId);
   if (!player?.alive) return;
   player.alive = false;
+  player.deathReason = "Bạn bị loại vì rời ván.";
   delete game.votes[userId];
   delete game.actions[userId];
   if (player.role === "witch") game.witchChoice = null;

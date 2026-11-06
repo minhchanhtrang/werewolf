@@ -421,6 +421,12 @@
           <button id="dismissPhaseNotice" class="btn btn--ghost btn--sm" type="button" aria-label="Đóng thông báo">✕</button>
         </div>
       </section>
+      <div id="phaseArtPopup" class="phase-art-popup" hidden>
+        <div class="phase-art-frame">
+          <canvas id="phaseArt" class="phase-art" aria-label="Hoạt ảnh giai đoạn"></canvas>
+          <div class="phase-art-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+      </div>
 
       <!-- Game Stage Pixel Scene: Tự căn chỉnh vừa khít trung tâm -->
       <div class="game-arena">
@@ -447,6 +453,7 @@
       <div class="game-hud-info">
         <p id="onlineActionStatus" class="hud-action-text" role="status"></p>
         <p id="onlineTeam" class="hud-team-text"></p>
+        <p id="myDeathReason" class="hud-team-text" role="status" hidden></p>
         <p id="onlineSeer" class="hud-seer-text"></p>
         <p id="gameActionError" role="status"></p>
       </div>

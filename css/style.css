@@ -1851,6 +1851,45 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
 .eyebrow.pixel-heading { font-size: 15px; }
 
 /* Chat fills the space between the game header and action bar. */
+.phase-notice-toast {
+  top: 12px; transform: translateX(-50%);
+  width: min(440px, calc(100% - 24px)); max-height: 30%; overflow-y: auto;
+  pointer-events: none;
+}
+.phase-notice-toast__inner { pointer-events: none; }
+.phase-notice-toast__inner > button { pointer-events: auto; }
+.phase-notice-toast__inner p { grid-row: 2; }
+.phase-art-popup {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 39; pointer-events: none; line-height: 0;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px #0006;
+}
+.phase-art-frame {
+  position: relative;
+  padding: 12px;
+  background: url('../assets/effects/phase-frame.png') center / 142% 155% no-repeat;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+.phase-art-dots { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; justify-content: center; gap: 4px; padding: 5px 7px; border-radius: 6px; background: #080d1499; }
+.phase-art-dots span { width: 4px; height: 4px; background: var(--gold); animation: phase-dot 1.2s infinite; }
+.phase-art-dots span:nth-child(2) { animation-delay: .2s; }
+.phase-art-dots span:nth-child(3) { animation-delay: .4s; }
+.phase-art-popup[hidden] .phase-art-dots span { animation: none; }
+@keyframes phase-dot { 0%, 70%, 100% { opacity: .3; } 35% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .phase-art-dots span { animation: none; opacity: .8; } }
+.phase-art {
+  display: block;
+  width: min(200px, 38vw, calc(24dvh * var(--phase-art-ratio, 1.78)));
+  height: auto;
+  aspect-ratio: var(--phase-art-ratio, 1.78);
+  image-rendering: pixelated;
+}
+@media (max-width: 650px) {
+  .phase-notice-toast { top: 8px; width: calc(100% - 16px); max-height: 28%; }
+  .phase-art { width: min(140px, 36vw, calc(20dvh * var(--phase-art-ratio, 1.78))); }
+}
 #onlineScene { isolation: isolate; }
 #screen-game .village-chat[hidden], #screen-game .wolf-chat[hidden] { display: none; }
 #screen-game {

@@ -1,5 +1,6 @@
 import { createScene } from "./scene.js";
 import { ROLE_LABELS } from "./rules.js";
+import { createPhaseArt } from "./phase-art.js";
 
 const phases = { voting: "Làng họp bàn", revealed: "Mở phiếu", guard: "Bảo vệ đang che chở", night: "Sói đang đi săn", seer: "Tiên tri đang soi", witch: "Phù thủy đang pha thuốc", hunter: "Phát súng cuối cùng", dawn: "Bình minh ló rạng", ended: "Kết thúc" };
 const isNight = phase => ["guard", "night", "seer", "witch"].includes(phase);
@@ -18,10 +19,13 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
   const guide = document.querySelector("#phaseGuide");
   let resultKey = "";
   const notice = document.querySelector("#phaseNotice");
+  const renderPhaseArt = createPhaseArt(document.querySelector("#phaseArt"));
   const logPanel = document.querySelector("#chatGameLog");
   let noticeKey = "";
   let gameKey = "";
-  document.querySelector("#dismissPhaseNotice").addEventListener("click", () => { notice.hidden = true; });
+  document.querySelector("#dismissPhaseNotice").addEventListener("click", () => {
+    notice.hidden = true;
+  });
   let current = null;
   let userId = null;
   let eligible = [];
@@ -117,10 +121,13 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
     userId = id;
     panel.hidden = !current;
     if (!current) {
+      document.querySelector("#myDeathReason").hidden = true;
+      document.querySelector("#myDeathReason").textContent = "";
       witchPanel.hidden = true;
       poisonMode = false;
       potionPhase = "";
       notice.hidden = logPanel.hidden = true;
+      renderPhaseArt(null);
       noticeKey = gameKey = "";
       result.hidden = true;
       resultPlayers.replaceChildren();
@@ -140,6 +147,9 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
       lastServerNow = game.serverNow;
     }
     const me = game.roster.find(player => player.id === id);
+    const deathNotice = document.querySelector("#myDeathReason");
+    deathNotice.hidden = !game.myDeathReason;
+    deathNotice.textContent = game.myDeathReason || "";
     const identity = game.id || game.startedAt;
     if (gameKey !== identity) {
       logPanel.open = false;
@@ -158,7 +168,9 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
     if (phaseKey !== noticeKey) {
       document.querySelector("#phaseNoticeHeading").textContent = game.phase === "intro" ? "Nhận vai" : (isNight(game.phase) ? "Đêm " : "Ngày ") + game.day + " · " + phases[game.phase];
       document.querySelector("#phaseNoticeText").textContent = game.phaseNotice || game.history.at(-1)?.text || "Ván đã bắt đầu. Hãy xem vai và chọn hành động theo lượt.";
-      notice.hidden = false;
+      notice.hidden = game.phase === "ended";
+      document.querySelector("#dismissPhaseNotice").hidden = false;
+      renderPhaseArt(game.phase);
       noticeKey = phaseKey;
     }
     result.hidden = game.phase !== "ended";

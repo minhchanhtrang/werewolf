@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./css/style.css">
   <script type="module" src="./js/auth.js"></script>
   <script type="module" src="./js/lobby.js"></script>
+  <script type="module" src="./js/role-media.js"></script>
 </head>
 <body>
 
@@ -388,6 +389,7 @@
       <div id="roleCard" class="role-card" hidden>
         <div class="role-card__frame">
           <img id="rolePortrait" alt="" width="512" height="768">
+          <video id="roleVideo" class="animated-role" poster="/assets/role/role-wolf.png" muted playsinline loop preload="none" hidden aria-label="Vai Ma Sói"></video>
         </div>
         <h3 id="myRole"></h3>
         <p id="roleDescription"></p>

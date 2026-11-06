@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { existsSync } from "node:fs";
+import { createReadStream } from "node:fs";
 import { loadEnvFile } from "node:process";
 import { createDatabase, initializeDatabase } from "./backend/database.mjs";
 import { createAuth } from "./backend/auth.mjs";
@@ -53,7 +54,8 @@ createServer(async (request, response) => {
     }
     const relative = pathname === "/" ? "index.html" : pathname.slice(1);
     const publicFont = /^assets\/(?:SVN-Determination Sans\.(?:otf|ttf)|JosefinSans-(?:Italic-)?VariableFont_wght\.ttf)$/.test(relative);
-    if (relative !== "index.html" && !publicFont && !/^(css|js)\/[a-zA-Z0-9_-]+\.(css|js)$/.test(relative) && !/^assets\/(backgrounds|characters|effects|role)\/[a-zA-Z0-9_-]+\.png$/.test(relative)) {
+    const publicVideo = /^assets\/role\/[a-zA-Z0-9_-]+\.mp4$/.test(relative);
+    if (relative !== "index.html" && !publicFont && !publicVideo && !/^(css|js)\/[a-zA-Z0-9_-]+\.(css|js)$/.test(relative) && !/^assets\/(backgrounds|characters|effects|role)\/[a-zA-Z0-9_-]+\.png$/.test(relative)) {
       response.writeHead(404).end("Not found");
       return;
     }
@@ -61,6 +63,24 @@ createServer(async (request, response) => {
     const info = await stat(file);
     const tag = `W/"${info.size}-${Math.trunc(info.mtimeMs)}"`;
     const cache = "public, max-age=0, must-revalidate";
+    if (publicVideo) {
+      const headers = { "Content-Type": "video/mp4", "Accept-Ranges": "bytes", "Cache-Control": cache, ETag: tag };
+      const range = request.headers.range;
+      let start = 0, end = info.size - 1;
+      if (range) {
+        const match = /^bytes=(\d+)-(\d*)$/.exec(range);
+        if (!match || Number(match[1]) >= info.size || (match[2] && Number(match[2]) < Number(match[1]))) {
+          response.writeHead(416, { "Content-Range": `bytes */${info.size}` }).end(); return;
+        }
+        start = Number(match[1]); end = match[2] ? Math.min(Number(match[2]), end) : end;
+        headers["Content-Range"] = `bytes ${start}-${end}/${info.size}`;
+      }
+      response.writeHead(range ? 206 : 200, { ...headers, "Content-Length": end - start + 1 });
+      if (request.method === "HEAD") { response.end(); return; }
+      const stream = createReadStream(file, { start, end });
+      stream.on("error", () => response.destroy());
+      response.on("close", () => stream.destroy()); stream.pipe(response); return;
+    }
     if (request.headers["if-none-match"] === tag) {
       response.writeHead(304, { ETag: tag, "Cache-Control": cache }).end();
       return;

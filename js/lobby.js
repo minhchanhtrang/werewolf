@@ -7,6 +7,7 @@ import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
 import { createVillageChat } from "./village-chat.js";
 import { createRoleIntro } from "./role-intro.js";
+import { observeRoleVideo } from "./role-media.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
@@ -48,6 +49,7 @@ const rolePanel    = document.querySelector("#myRolePanel");
 const roleCard     = document.querySelector("#roleCard");
 const roleToggle   = document.querySelector("#toggleRole");
 const rolePortrait = document.querySelector("#rolePortrait");
+const roleVideo = document.querySelector("#roleVideo");
 function kickButton(member) {
   const button = document.createElement("button");
   button.type = "button"; button.className = "btn btn--danger btn--sm room-kick";
@@ -122,6 +124,16 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   const artwork = document.createElement("div"); artwork.className = "waiting-role-card__art";
   const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
   image.alt = ""; image.loading = "lazy"; artwork.append(image);
+  if (role === "wolf") {
+    const video = document.createElement("video");
+    video.className = "animated-role";
+    video.src = "/assets/role/role-wolf.mp4"; video.poster = image.src;
+    video.muted = true; video.loop = false; video.playsInline = true; video.preload = "none";
+    video.dataset.surprise = "true";
+    video.setAttribute("aria-label", label);
+    video.addEventListener("error", () => { video.hidden = true; image.hidden = false; });
+    artwork.append(video); observeRoleVideo(video);
+  }
   const name = document.createElement("strong"); name.textContent = label;
   const team = document.createElement("span"); team.className = "waiting-role-card__team";
   team.classList.add("waiting-role-card__team--" + (role === "idiot" ? "third" : role === "wolf" ? "wolf" : "village"));
@@ -392,7 +404,7 @@ function render() {
       witch: "Phù thủy", villager: "Dân làng", hunter: "Thợ săn", idiot: "Thằng ngu"
     };
     const descriptions = {
-      wolf:     "Bạn thuộc phe Sói.",
+      wolf: "Bạn thuộc phe Sói, cùng đồng đội chọn 1 nạn nhân mỗi đêm. Thắng khi số Sói sống bằng hoặc vượt số người ngoài phe Sói còn sống.",
       seer:     "Bạn thuộc phe Dân, có khả năng soi người vào ban đêm.",
       guard:    "Bạn thuộc phe Dân, có khả năng bảo vệ vào ban đêm.",
       witch:    "Bạn thuộc phe Dân. Có 1 bình cứu và 1 bình độc cho cả ván, được dùng cả hai trong cùng đêm. Cứu nạn nhân Sói mà không biết danh tính. Bình độc xuyên bảo vệ.",
@@ -403,6 +415,10 @@ function render() {
     document.querySelector("#myRole").textContent          = labels[room.game.myRole] || "Chưa có vai";
     document.querySelector("#roleDescription").textContent = descriptions[room.game.myRole] || "";
     const role = room.game.myRole;
+    roleVideo.hidden = role !== "wolf";
+    rolePortrait.hidden = role === "wolf";
+    if (role === "wolf" && !roleVideo.getAttribute("src")) roleVideo.src = "/assets/role/role-wolf.mp4";
+    if (role !== "wolf" && roleVideo.getAttribute("src")) { roleVideo.pause(); roleVideo.removeAttribute("src"); roleVideo.load(); }
     if (Object.hasOwn(labels, role)) {
       const portrait = "/assets/role/role-" + role + ".png";
       if (rolePortrait.getAttribute("src") !== portrait) rolePortrait.src = portrait;

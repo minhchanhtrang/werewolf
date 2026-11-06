@@ -689,6 +689,12 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 .waiting-role-card__art { aspect-ratio: 3 / 4; overflow: hidden; background: #0b1016; border-radius: 6px; display: grid; place-items: center; }
 .waiting-role-card__art img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .waiting-role-card strong { color: var(--gold); font-size: 13px; }
+.role-quantity { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 3px; align-items: center; }
+.role-quantity button { width: 30px; height: 36px; padding: 0; border: 1px solid #796143; border-radius: 6px; background: #24282d; color: var(--gold); font-size: 21px; cursor: pointer; }
+.role-quantity button:disabled { opacity: .35; cursor: default; }
+.role-quantity button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.role-config__fields .role-quantity input { min-width: 0; padding: 4px 0; text-align: center; font-size: 16px; appearance: textfield; -moz-appearance: textfield; }
+.role-quantity input::-webkit-inner-spin-button, .role-quantity input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .waiting-role-card span { font-size: 11px; color: var(--text-secondary); }
 .waiting-role-card .waiting-role-card__team { padding: 6px 3px; border: 1px solid; border-radius: 5px; font-size: 12px; font-weight: 800; line-height: 1.3; }
 .waiting-role-card .waiting-role-card__team--village { color: #b5f5cb; background: #183a2c; border-color: #4f976a; }

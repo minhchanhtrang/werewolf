@@ -118,7 +118,7 @@ document.querySelector("#dismissReplay").addEventListener("click", () => {
   document.querySelector("#replayPanel").hidden = true;
 });
 for (const [role, label] of Object.entries(ROLE_LABELS)) {
-  const field = document.createElement("label"); field.className = "waiting-role-card";
+  const field = document.createElement("div"); field.className = "waiting-role-card";
   const artwork = document.createElement("div"); artwork.className = "waiting-role-card__art";
   const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
   image.alt = ""; image.loading = "lazy"; artwork.append(image);
@@ -130,8 +130,30 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   field.append(artwork, name, team, quantity);
   const input = document.createElement("input"); input.type = "number"; input.min = "0";
   input.max = ["wolf", "villager"].includes(role) ? "20" : "1"; input.step = "1";
-  input.name = role; input.value = "0"; input.required = true; field.append(input); roleFields.append(field);
+  input.name = role; input.value = "0"; input.required = true; input.readOnly = true;
+  const stepper = document.createElement("div"); stepper.className = "role-quantity";
+  const minus = document.createElement("button"), plus = document.createElement("button");
+  for (const [button, delta] of [[minus, -1], [plus, 1]]) {
+    button.type = "button"; button.textContent = delta < 0 ? "−" : "+";
+    button.setAttribute("aria-label", (delta < 0 ? "Giảm " : "Tăng ") + label);
+    button.dataset.delta = delta;
+    button.addEventListener("click", () => {
+      if (input.disabled) return;
+      input.value = Math.max(Number(input.min), Math.min(Number(input.max), Number(input.value) + delta));
+      syncRoleButtons();
+    });
+  }
+  stepper.append(minus, input, plus); field.append(stepper); roleFields.append(field);
   input.setAttribute("aria-label", "Số lượng " + label);
+}
+function syncRoleButtons() {
+  for (const stepper of roleFields.querySelectorAll(".role-quantity")) {
+    const input = stepper.querySelector("input");
+    for (const button of stepper.querySelectorAll("button")) {
+      button.disabled = input.disabled || (Number(button.dataset.delta) < 0
+        ? Number(input.value) <= Number(input.min) : Number(input.value) >= Number(input.max));
+    }
+  }
 }
 document.querySelector("#roleConfigForm").addEventListener("submit", async event => {
   event.preventDefault();
@@ -346,6 +368,7 @@ function render() {
     configKey = nextConfigKey;
   }
   for (const input of roleFields.querySelectorAll("input")) input.disabled = !host || busy || dealt;
+  syncRoleButtons();
   document.querySelector("#saveRoleConfig").hidden = !host;
   document.querySelector("#saveRoleConfig").disabled = busy || dealt || count < MIN_PLAYERS;
   let validConfig = false;

@@ -6,9 +6,7 @@
   <meta name="theme-color" content="#080d14">
   <title>Ma Sói · Đêm định mệnh</title>
   <link rel="icon" type="image/png" href="./assets/backgrounds/favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="./css/style.css">
-  <script type="module" src="./js/app.js"></script>
   <script type="module" src="./js/auth.js"></script>
   <script type="module" src="./js/lobby.js"></script>
 </head>
@@ -120,40 +118,7 @@
         <p id="roomMessage" class="form-msg" role="status" aria-live="polite"></p>
       </section>
 
-      <!-- Prototype (single-machine) panel - hidden -->
-      <details class="prototype-panel card card--muted" hidden>
-        <summary>🧪 Thử luật trên một máy</summary>
-        <div class="game-bar"><strong id="phaseLabel" aria-live="polite">Chuẩn bị</strong><span id="aliveCount"></span></div>
-        <div class="scene" id="scene" aria-label="Mười người chơi quanh lửa trại">
-          <div class="moon" aria-hidden="true"></div>
-          <div class="trees" aria-hidden="true">♠ ♠ ♠ ♠ ♠</div>
-          <div class="ground"></div>
-          <div class="fire" aria-hidden="true"><span class="flame">🔥</span></div>
-        </div>
-        <div class="controls">
-          <button class="action" id="startVoting">Bắt đầu bỏ phiếu</button>
-          <button class="action" id="chooseTarget" aria-pressed="false">Chọn mục tiêu</button>
-          <button class="action" id="revealVotes" disabled>Công bố phiếu</button>
-          <button class="action" id="toggleSleep" disabled>Bắt đầu đêm</button>
-          <button class="action secondary" id="clearVotes">Ván mới</button>
-          <span id="selection" aria-live="polite">Chưa chọn người chơi.</span>
-        </div>
-        <div class="dashboard">
-          <section class="vote-panel" aria-labelledby="voteHeading">
-            <div class="panel-heading"><h2 id="voteHeading">Diễn biến</h2><p id="voteTimer" class="timer">Thời gian: —</p></div>
-            <p id="voteProgress" aria-live="polite">Chưa bắt đầu.</p>
-            <p id="nightActions" hidden></p>
-            <p id="voteResult" aria-live="polite"></p>
-            <aside id="seerPanel" hidden><h3>🔮 Kết quả Tiên tri</h3><p id="seerResult" aria-live="polite"></p></aside>
-          </section>
-          <section class="vote-panel"><h2>Nhật ký ván</h2><ol id="gameHistory" class="history"><li>Chưa có sự kiện.</li></ol></section>
-        </div>
-        <details class="vote-panel">
-          <summary>Hướng dẫn &amp; công cụ quản trò</summary>
-          <div class="tool-buttons"><button class="action secondary" id="toggleRoles" aria-pressed="true">Ẩn vai</button><button class="action secondary" id="autoVotes" disabled>Điền phiếu ngẫu nhiên</button></div>
-        </details>
-      </details>
-    </aside>
+</aside>
 
     <!-- RIGHT: intro -->
     <main class="s-lobby__intro" aria-label="Giới thiệu game">
@@ -219,7 +184,7 @@
             </div>
           </article>
 
-          <article class="role-card-intro"><div class="role-card-intro__img"><img src="/assets/role/role-hunter.png" alt="" width="200" height="200" loading="lazy"></div><div class="role-card-intro__body"><h3>Thợ săn</h3><p>Bị Sói giết hoặc treo cổ được bắn một người. Trúng độc, tự sát hay rời ván không được bắn.</p><span class="role-tag role-tag--good">Phe Dân</span></div></article>
+          <article class="role-card-intro"><div class="role-card-intro__img"><img src="/assets/role/role-hunter.png" alt="" width="200" height="200" loading="lazy"></div><div class="role-card-intro__body"><h3>Thợ săn</h3><p>Bị Sói giết hoặc treo cổ được bắn một người. Trúng độc không được bắn.</p><span class="role-tag role-tag--good">Phe Dân</span></div></article>
           <article class="role-card-intro"><div class="role-card-intro__img"><img src="/assets/role/role-idiot.png" alt="" width="200" height="200" loading="lazy"></div><div class="role-card-intro__body"><h3>Thằng ngu</h3><p>Thuộc phe thứ ba. Khiến cả làng bỏ phiếu loại mình để giành chiến thắng riêng. Chết vì Sói, độc hay đạn sẽ không thắng.</p><span class="role-tag role-tag--third">Phe thứ ba</span></div></article>
           <article class="role-card-intro role-villager">
             <div class="role-card-intro__img">

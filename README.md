@@ -44,7 +44,7 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 
 Tài khoản và phiên đăng nhập được giữ trong PostgreSQL. Dữ liệu ván đang chơi được ghi tạm để đồng bộ và phục hồi. Khi kết thúc, dữ liệu ván được dọn khỏi CSDL; kết quả chỉ giữ trong RAM 60 giây. Không có chức năng lưu ván hay lưu lịch sử lâu dài. Bảng save/chat cũ được bỏ khi khởi động.
 
-Bộ prototype một máy cũ được giữ trong mã nguồn để tham khảo và kiểm tra luật, đang ẩn trên giao diện; ván online do backend điều khiển.
+Bản online do backend điều khiển; bộ prototype một máy cũ đã được gỡ. Xem [CODE_MAP.md](./CODE_MAP.md) để biết chức năng từng file.
 
 Ảnh/HTML/CSS/JS dùng ETag và cache kiểm tra lại phiên bản. API phòng chỉ gửi lại dữ liệu khi nội dung thay đổi, không tính thay đổi đồng hồ vào phiên bản; JSON/code hỗ trợ gzip. Poll giảm tần suất khi ẩn tab hoặc ở sảnh. Chat Sói không ghi vào CSDL.
 

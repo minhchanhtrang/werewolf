@@ -68,8 +68,6 @@ function showUser(user) {
   // Update accountStatus areas
   const accountStatus = document.querySelector("#accountStatus");
   if (accountStatus) accountStatus.textContent = "";
-  const accountStatusWaiting = document.querySelector("#accountStatus-waiting");
-  if (accountStatusWaiting) accountStatusWaiting.textContent = "";
   const accountStatusGame = document.querySelector("#accountStatus-game");
   if (accountStatusGame) accountStatusGame.textContent = "";
 

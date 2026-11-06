@@ -211,9 +211,7 @@ function _syncWaitingRoomUI() {
 
   // Game screen elements (IDs with -game suffix in HTML)
   const codeGame  = document.querySelector("#roomCode-game");
-  const countGame = document.querySelector("#roomCount-game");
   if (codeGame  && codeElement)  codeGame.textContent  = codeElement.textContent;
-  if (countGame && countElement) countGame.textContent = countElement.textContent;
 }
 
 // ── Intro Tabs ──────────────────────────────────────────────────────────────

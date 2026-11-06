@@ -177,14 +177,6 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 .btn--wide { width: 100%; justify-content: center; padding: 16px; }
 .btn--sm   { padding: 8px 14px; font-size: 12px; }
 
-/* Legacy .action mappings (used by app.js / scene.js) */
-.action           { display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px; border: 0; border-radius: 10px; background: var(--gold); color: #12100a; font: inherit; font-size: 14px; font-weight: bold; cursor: pointer; transition: background var(--transition), transform var(--transition); text-decoration: none; white-space: nowrap; }
-.action:not(:disabled):hover { background: var(--gold-lt); transform: translateY(-1px); }
-.action:disabled  { opacity: .4; cursor: not-allowed; }
-.action:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
-.action.secondary { background: #1a2a35; color: var(--text-primary); border: 1px solid #334455; }
-.action.secondary:not(:disabled):hover { background: #223040; transform: translateY(-1px); }
-
 .tool-buttons { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 /* ── 3. Screens (full-viewport sections) ───────────────────────────── */
@@ -457,23 +449,6 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 /* roomTools */
 #roomTools { justify-content: flex-end; margin: 8px 0; gap: 8px; }
 
-/* Prototype panel */
-.prototype-panel { border-radius: var(--r-md); overflow: hidden; }
-.prototype-panel > summary {
-  padding: 14px 18px;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 13px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  list-style: none;
-}
-.prototype-panel > summary:hover { background: rgba(255,255,255,.06); }
-.prototype-panel > summary::marker { display: none; }
-.prototype-panel[open] > summary { border-radius: var(--r-md) var(--r-md) 0 0; }
-
 /* Right: intro */
 .s-lobby__intro {
   overflow-y: auto;
@@ -689,11 +664,11 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 .waiting-role-card__art { aspect-ratio: 3 / 4; overflow: hidden; background: #0b1016; border-radius: 6px; display: grid; place-items: center; }
 .waiting-role-card__art img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .waiting-role-card strong { color: var(--gold); font-size: 13px; }
-.role-quantity { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 3px; align-items: center; }
-.role-quantity button { width: 30px; height: 36px; padding: 0; border: 1px solid #796143; border-radius: 6px; background: #24282d; color: var(--gold); font-size: 21px; cursor: pointer; }
+.role-quantity { display: grid; grid-template-columns: repeat(3, 24px); gap: 3px; align-items: center; justify-content: center; }
+.role-quantity button { width: 24px; height: 26px; min-height: 0; padding: 0; border: 1px solid #796143; border-radius: 5px; background: #24282d; color: var(--gold); font-size: 16px; line-height: 1; cursor: pointer; }
 .role-quantity button:disabled { opacity: .35; cursor: default; }
 .role-quantity button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.role-config__fields .role-quantity input { min-width: 0; padding: 4px 0; text-align: center; font-size: 16px; appearance: textfield; -moz-appearance: textfield; }
+.role-config__fields .role-quantity input { width: 24px; height: 26px; min-height: 0; min-width: 0; padding: 0; text-align: center; font-size: 16px; appearance: textfield; -moz-appearance: textfield; }
 .role-quantity input::-webkit-inner-spin-button, .role-quantity input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .waiting-role-card span { font-size: 11px; color: var(--text-secondary); }
 .waiting-role-card .waiting-role-card__team { padding: 6px 3px; border: 1px solid; border-radius: 5px; font-size: 12px; font-weight: 800; line-height: 1.3; }
@@ -1300,19 +1275,6 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 .role-secret      { color: rgba(255,255,255,.4); font-size: 11px !important; margin-top: 4px !important; }
 
 /* Game bar */
-.game-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-.game-bar strong { color: var(--text-primary); }
-#aliveCount  { color: var(--text-secondary); }
 #onlineLiving{ color: var(--text-secondary); font-size: 13px; }
 
 /* Timer */
@@ -1626,48 +1588,6 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
   animation: pixel-fire .9s steps(6) infinite;
 }
 
-/* ── 10. Prototype / Controls (single-machine) ─────────────────────── */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 14px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  margin: 12px 0;
-}
-
-#selection { flex-basis: 100%; min-height: 24px; color: var(--text-secondary); font-size: 13px; }
-
-.dashboard {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 16px;
-  margin: 16px 0;
-}
-.dashboard .vote-panel { margin: 0; min-width: 0; width: 100%; }
-
-.vote-panel {
-  max-width: 1000px;
-  margin: 20px auto;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: rgba(255,255,255,.03);
-}
-.vote-panel h2 { margin-bottom: 10px; font-size: 17px; }
-.vote-panel p  { color: var(--text-secondary); line-height: 1.6; }
-
-.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.panel-heading h2, .panel-heading p { margin: 0; }
-
-#voteResult { color: var(--gold); white-space: pre-line; }
-#voteResult:empty { display: none; }
-
-#seerPanel { background: rgba(140,100,240,.1); border: 1px solid rgba(140,100,240,.3); border-radius: 10px; padding: 4px 14px; }
-
 .history { max-height: 260px; overflow-y: auto; list-style: none; padding: 0; margin-bottom: 0; }
 .history:empty::before { content: "Chưa có sự kiện."; display: block; color: var(--text-muted); padding: 8px 0; }
 .history li { border-left: 2px solid rgba(240,192,96,.5); padding: 2px 0 2px 14px; margin: 10px 0; }
@@ -1683,7 +1603,6 @@ details > summary:focus-visible { outline: 2px solid var(--gold); outline-offset
 .account-panel { background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: var(--r-md); padding: 20px; }
 
 /* Legacy selectors used in CSS hooks body[data-view=...] */
-body[data-view="play"] .prototype-panel { display: none; }
 
 /* roomMessage */
 #roomMessage { margin-top: 10px; }
@@ -1732,7 +1651,7 @@ body[data-view="play"] .prototype-panel { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .avatar, .flame, .pixel-scene .avatar, .pixel-scene .flame,
-  .s-login__moon, .s-login__glow, .arm, .scene, .moon, .action { animation: none; transition: none; }
+  .s-login__moon, .s-login__glow, .arm, .scene, .moon { animation: none; transition: none; }
 }
 
 /* ── 12. Responsive ────────────────────────────────────────────────── */
@@ -1754,9 +1673,6 @@ body[data-view="play"] .prototype-panel { display: none; }
   .avatar           { font-size: 32px; }
   .name             { font-size: 10px; white-space: normal; }
   .status           { font-size: 9px; }
-  .controls         { gap: 8px; padding: 10px; }
-  .action           { padding: 10px 12px; font-size: 12px; }
-  .dashboard        { grid-template-columns: 1fr; }
   .room-members     { grid-template-columns: 1fr; }
   .result-players   { grid-template-columns: 1fr; }
   .lobby-extras     { grid-template-columns: 1fr; }

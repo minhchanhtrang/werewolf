@@ -25,11 +25,6 @@ export function roleCounts(count) {
   return { wolf, seer, guard, witch, villager: count - wolf - seer - guard - witch };
 }
 
-export function describeRoles(count) {
-  const roles = roleCounts(count);
-  return [`${roles.wolf} Sói`, `${roles.seer} Tiên tri`, ...(roles.guard ? [`${roles.guard} Bảo vệ`] : []), `${roles.witch} Phù thủy`, `${roles.villager} Dân`].join(" · ");
-}
-
 export function canStartRoom(members, capacity) {
   return members.length >= MIN_PLAYERS && members.length <= capacity && members.every(member => member.ready);
 }

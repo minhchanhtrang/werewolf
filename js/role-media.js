@@ -3,7 +3,8 @@ const visible = new Set();
 const timers = new Map();
 const completed = new WeakSet();
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-function canPlay(video) { return visible.has(video) && !document.hidden && !video.hidden; }
+export const desktopVideo = matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)");
+function canPlay(video) { return desktopVideo.matches && visible.has(video) && !document.hidden && !video.hidden; }
 function stopSurprise(video) {
   clearTimeout(timers.get(video)); timers.delete(video);
   video.pause(); video.classList.remove("is-playing");
@@ -58,3 +59,4 @@ export function observeRoleVideo(video) {
 for (const video of document.querySelectorAll(".animated-role")) observeRoleVideo(video);
 document.addEventListener("visibilitychange", sync);
 reducedMotion.addEventListener("change", sync);
+desktopVideo.addEventListener("change", sync);

@@ -7,7 +7,7 @@ import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
 import { createVillageChat } from "./village-chat.js";
 import { createRoleIntro } from "./role-intro.js";
-import { observeRoleVideo } from "./role-media.js";
+import { observeRoleVideo, desktopVideo } from "./role-media.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
@@ -127,7 +127,12 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   if (role === "wolf") {
     const video = document.createElement("video");
     video.className = "animated-role";
-    video.src = "/assets/role/role-wolf.mp4"; video.poster = image.src;
+    video.dataset.src = "/assets/role/role-wolf.mp4"; video.poster = image.src;
+    if (desktopVideo.matches) video.src = video.dataset.src;
+    desktopVideo.addEventListener("change", () => {
+      if (desktopVideo.matches) video.src = video.dataset.src;
+      else { video.pause(); video.removeAttribute("src"); video.load(); }
+    });
     video.muted = true; video.loop = false; video.playsInline = true; video.preload = "none";
     video.dataset.surprise = "true";
     video.setAttribute("aria-label", label);
@@ -415,10 +420,11 @@ function render() {
     document.querySelector("#myRole").textContent          = labels[room.game.myRole] || "Chưa có vai";
     document.querySelector("#roleDescription").textContent = descriptions[room.game.myRole] || "";
     const role = room.game.myRole;
-    roleVideo.hidden = role !== "wolf";
-    rolePortrait.hidden = role === "wolf";
-    if (role === "wolf" && !roleVideo.getAttribute("src")) roleVideo.src = "/assets/role/role-wolf.mp4";
-    if (role !== "wolf" && roleVideo.getAttribute("src")) { roleVideo.pause(); roleVideo.removeAttribute("src"); roleVideo.load(); }
+    const useVideo = role === "wolf" && desktopVideo.matches;
+    roleVideo.hidden = !useVideo;
+    rolePortrait.hidden = useVideo;
+    if (useVideo && !roleVideo.getAttribute("src")) roleVideo.src = "/assets/role/role-wolf.mp4";
+    if (!useVideo && roleVideo.getAttribute("src")) { roleVideo.pause(); roleVideo.removeAttribute("src"); roleVideo.load(); }
     if (Object.hasOwn(labels, role)) {
       const portrait = "/assets/role/role-" + role + ".png";
       if (rolePortrait.getAttribute("src") !== portrait) rolePortrait.src = portrait;
@@ -531,6 +537,7 @@ function accountChanged() {
 // ── Event Listeners ──────────────────────────────────────────────────────────
 
 window.addEventListener("accountchange", accountChanged);
+desktopVideo.addEventListener("change", () => render());
 createButton.addEventListener("click", () => update("create", {}));
 joinForm.addEventListener("submit", event => {
   event.preventDefault();

@@ -1837,6 +1837,7 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
 .eyebrow.pixel-heading { font-size: 15px; }
 
 /* Chat fills the space between the game header and action bar. */
+#onlineScene { isolation: isolate; }
 #screen-game .village-chat[hidden], #screen-game .wolf-chat[hidden] { display: none; }
 #screen-game {
   --chat-gap: 12px;
@@ -1860,7 +1861,7 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
 #screen-game .village-chat h3, #screen-game .wolf-chat__heading { flex-shrink: 0; }
 @media (max-width: 650px) {
   #screen-game { --chat-space: max(0px, calc(100dvh - var(--game-header-height, 120px) - var(--game-footer-height, 112px) - 16px)); }
-  #screen-game .village-chat:not(.is-open) { height: auto; }
+  #screen-game #villageChat.village-chat:not(.is-open) { height: auto; }
   #screen-game:has(.village-chat:not(.is-open)) .wolf-chat {
     height: max(0px, calc(var(--chat-space) - var(--village-chat-height, 44px) - 8px));
   }

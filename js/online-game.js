@@ -102,10 +102,12 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
   const villageChat = document.querySelector("#villageChat");
   const layoutObserver = new ResizeObserver(() => {
     const screen = document.querySelector("#screen-game");
+    screen.style.setProperty("--game-header-height", document.querySelector(".game-hud-top").getBoundingClientRect().height + "px");
     screen.style.setProperty("--game-footer-height", footer.getBoundingClientRect().height + "px");
     screen.style.setProperty("--village-chat-height", villageChat.getBoundingClientRect().height + "px");
   });
   layoutObserver.observe(footer); layoutObserver.observe(villageChat);
+  layoutObserver.observe(document.querySelector(".game-hud-top"));
 
   function render(game, id, busy) {
     currentBusy = busy;

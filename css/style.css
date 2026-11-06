@@ -18,7 +18,7 @@
 .village-chat { position: fixed; bottom: calc(var(--game-footer-height, 112px) + 12px); left: 12px; right: auto; z-index: 65; width: min(280px, calc(100vw - 24px)); margin: 0; padding: 8px 12px; border: 1px solid #52665b; border-radius: 8px; background: #101922cc; backdrop-filter: blur(6px); font-size: 12px; }
 .village-chat h3 { font-size: 12px; color: #d6bd8b; margin-bottom: 4px; }
 .village-chat__toggle { display: none; }
-#villageChatMessages { list-style: none; height: 48px; overflow-y: auto; overflow-wrap: anywhere; }
+#villageChatMessages { list-style: none; height: min(180px, 25dvh); overflow-y: auto; overflow-wrap: anywhere; }
 #villageChatMessages li { line-height: 1.5; padding: 2px 0; }
 #villageChatMessages strong { color: #e4cc9f; }
 #villageChatForm { display: flex; gap: 6px; margin-top: 5px; }
@@ -29,7 +29,7 @@
   .village-chat h3 { display: flex; align-items: center; justify-content: space-between; margin: 0; }
   .village-chat__toggle { display: inline-block; border: 1px solid #52665b; border-radius: 4px; background: transparent; color: #e4cc9f; padding: 5px 8px; font: inherit; }
   .village-chat:not(.is-open) #villageChatMessages, .village-chat:not(.is-open) #villageChatForm, .village-chat:not(.is-open) #villageChatStatus { display: none; }
-  #villageChatMessages { height: 32px; } #villageChatInput { font-size: 16px; } #villageChatForm button { min-height: 36px; }
+  #villageChatMessages { height: min(120px, 20dvh); } #villageChatInput { font-size: 16px; } #villageChatForm button { min-height: 36px; }
 }
 .replay-panel { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 85; width: min(360px, calc(100vw - 24px)); padding: 14px; border: 1px solid #ad8c59; border-radius: 10px; background: #131923f5; box-shadow: 0 8px 28px #0008; font-size: 13px; }
 .replay-panel h3 { color: #f3d399; margin-bottom: 6px; }
@@ -1850,4 +1850,34 @@ body[data-view="play"] .prototype-panel { display: none; }
   .s-game--fullscreen { overflow-y: auto; }
   .s-game__center { flex: none; height: 240px; }
   .game-hud-bottom { max-height: none; }
+}
+
+/* Chat fills the space between the game header and action bar. */
+#screen-game .village-chat[hidden], #screen-game .wolf-chat[hidden] { display: none; }
+#screen-game {
+  --chat-gap: 12px;
+  --chat-space: max(0px, calc(100dvh - var(--game-header-height, 80px) - var(--game-footer-height, 112px) - 24px));
+}
+#screen-game .village-chat {
+  display: flex; flex-direction: column;
+  height: var(--chat-space); min-height: 0;
+}
+#screen-game:has(#wolfChat:not([hidden])) .village-chat {
+  height: calc((var(--chat-space) - 8px) * .7);
+}
+#screen-game .wolf-chat {
+  display: flex; flex-direction: column;
+  height: calc((var(--chat-space) - 8px) * .3); min-height: 0;
+}
+#screen-game #villageChatMessages, #screen-game #wolfChatMessages {
+  flex: 1; min-height: 0; height: auto; max-height: none;
+}
+#screen-game #villageChatForm, #screen-game #wolfChatForm,
+#screen-game .village-chat h3, #screen-game .wolf-chat__heading { flex-shrink: 0; }
+@media (max-width: 650px) {
+  #screen-game { --chat-space: max(0px, calc(100dvh - var(--game-header-height, 120px) - var(--game-footer-height, 112px) - 16px)); }
+  #screen-game .village-chat:not(.is-open) { height: auto; }
+  #screen-game:has(.village-chat:not(.is-open)) .wolf-chat {
+    height: max(0px, calc(var(--chat-space) - var(--village-chat-height, 44px) - 8px));
+  }
 }

@@ -717,6 +717,7 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 
 .room-members strong { font-size: 14px; overflow-wrap: anywhere; }
 .room-members span   { font-size: 11px; color: var(--text-muted); }
+.room-members .room-kick { align-self: flex-end; width: auto; flex: none; padding: 4px 9px; font-size: 11px; line-height: 1.4; justify-content: center; }
 
 .room-members .is-ready {
   border-color: rgba(76,175,128,.4);

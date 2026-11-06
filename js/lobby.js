@@ -49,7 +49,7 @@ const roleToggle   = document.querySelector("#toggleRole");
 const rolePortrait = document.querySelector("#rolePortrait");
 function kickButton(member) {
   const button = document.createElement("button");
-  button.type = "button"; button.className = "btn btn--danger btn--sm";
+  button.type = "button"; button.className = "btn btn--danger btn--sm room-kick";
   button.textContent = "Kick"; button.dataset.kickId = String(member.id);
   button.dataset.kickName = member.username; button.disabled = busy;
   button.setAttribute("aria-label", "Kick " + member.username + " khỏi phòng");

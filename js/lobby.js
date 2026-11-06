@@ -147,6 +147,8 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   input.setAttribute("aria-label", "Số lượng " + label);
 }
 function syncRoleButtons() {
+  const selected = [...roleFields.querySelectorAll("input")].reduce((sum, input) => sum + Number(input.value), 0);
+  document.querySelector("#roleQuantityStatus").textContent = "Vai đã chọn: " + selected + "/" + (room?.members.length ?? 0) + " người";
   for (const stepper of roleFields.querySelectorAll(".role-quantity")) {
     const input = stepper.querySelector("input");
     for (const button of stepper.querySelectorAll("button")) {

@@ -35,7 +35,7 @@ const auth = createAuth(pool);
 const rooms = createRooms(pool);
 if (process.env.NODE_ENV === "production" && !pool) throw new Error("Không thể chạy game khi chưa kết nối PostgreSQL.");
 startGameClock(pool);
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png" };
+const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".otf": "font/otf", ".ttf": "font/ttf" };
 
 // Chỉ phục vụ các tài nguyên công khai của game, trên máy hiện tại.
 createServer(async (request, response) => {
@@ -52,7 +52,8 @@ createServer(async (request, response) => {
       return;
     }
     const relative = pathname === "/" ? "index.html" : pathname.slice(1);
-    if (relative !== "index.html" && !/^(css|js)\/[a-zA-Z0-9_-]+\.(css|js)$/.test(relative) && !/^assets\/(backgrounds|characters|effects|role)\/[a-zA-Z0-9_-]+\.png$/.test(relative)) {
+    const publicFont = /^assets\/(?:SVN-Determination Sans\.(?:otf|ttf)|JosefinSans-(?:Italic-)?VariableFont_wght\.ttf)$/.test(relative);
+    if (relative !== "index.html" && !publicFont && !/^(css|js)\/[a-zA-Z0-9_-]+\.(css|js)$/.test(relative) && !/^assets\/(backgrounds|characters|effects|role)\/[a-zA-Z0-9_-]+\.png$/.test(relative)) {
       response.writeHead(404).end("Not found");
       return;
     }

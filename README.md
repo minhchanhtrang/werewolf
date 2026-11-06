@@ -22,7 +22,7 @@ Mở http://127.0.0.1:3000 (hoặc PORT trong cấu hình). Sau khi sửa backen
 - Đăng nhập → sảnh → tạo phòng có mã hoặc nhập mã → phòng chờ → game.
 - Mỗi phòng 5–20 người, bắt đầu khi có ít nhất 5 người và tất cả người thật sẵn sàng.
 - Mỗi lần bấm thêm bot chỉ thêm một bot; bot sẵn sàng tự động.
-- Chủ phòng lưu bộ vai tùy chọn trước khi bắt đầu: tổng vai bằng số người, 5–20 người; ít nhất 1 Sói và ít Sói hơn phe Dân. Vai đặc biệt tối đa 1 mỗi loại. Đổi bộ vai hủy sẵn sàng của mọi người.
+- Chủ phòng lưu bộ vai tùy chọn trước khi bắt đầu: tổng vai bằng số người, 5–20 người; ít nhất 1 Sói và ít Sói hơn phe Dân. Vai đặc biệt tối đa 1 mỗi loại. Lưu hoặc thay đổi bộ vai giữ nguyên trạng thái sẵn sàng của mọi người.
 - Khi vào ván có 10 giây chuẩn bị; lá bài vai tự mở trong 5 giây đầu rồi tự đóng. Sau đó bắt đầu Đêm 1: Bảo vệ 20 giây → Sói 30 giây → Tiên tri 20 giây → Phù thủy 30 giây → bình minh. Mọi lượt ban đêm vẫn chạy đủ giờ kể cả vai vắng mặt/đã chết để tránh lộ vai. Hành động có thể sửa đến hết lượt, riêng soi và dùng bình chỉ một lần. Nút Xem vai vẫn dùng được sau khi bài tự đóng.
 - Thảo luận/bỏ phiếu 2 phút; tất cả người có quyền đã bỏ phiếu (kể cả phiếu trắng) thì rút còn tối đa 5 giây. Nhấp nhân vật để chọn trực tiếp.
 - Sói có bảng mục tiêu riêng; chỉ một nạn nhân mỗi đêm, hòa thì chọn ngẫu nhiên đều giữa các mục tiêu đồng hạng cao nhất.

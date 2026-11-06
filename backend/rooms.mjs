@@ -133,7 +133,6 @@ export function createRooms(pool) {
               try { counts = validateRoles(body.roles, current.members.length); }
               catch (error) { throw fault(400, error.message); }
               await client.query("UPDATE ww_rooms SET role_config=$1 WHERE code=$2", [JSON.stringify(counts), code]);
-              await client.query("UPDATE ww_room_members SET ready=FALSE WHERE room_code=$1", [code]);
             } else if (pathname.endsWith("/bots")) {
               if (typeof body.fill !== "boolean") throw fault(400, "Yêu cầu bot không hợp lệ.");
               const humans = current.members.filter(member => !member.bot).length;

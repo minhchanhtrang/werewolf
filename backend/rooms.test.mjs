@@ -70,8 +70,17 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   assert.equal((await api(0,"config",{roles:{wolf:1,villager:2}})).status,400);
   assert.equal((await api(0,"config",{roles:{wolf:1,witch:1,villager:3}})).status,200);
   assert.equal((await api(0,"ready",{ready:true})).status,200);
+  const changedConfig = await api(0,"config",{roles:{wolf:1,seer:1,villager:3}});
+  assert.equal(changedConfig.status,200);
+  assert.equal(changedConfig.data.room.members.find(m=>m.id===ids[0]).ready,true);
+  assert.equal(changedConfig.data.room.members.find(m=>m.id===ids[1]).ready,false);
   assert.equal((await api(0,"start",{})).status,409);
   await api(1,"ready",{ready:true});
+  const savedConfig = await api(0,"config",{roles:{wolf:1,witch:1,villager:3}});
+  assert.equal(savedConfig.status,200);
+  assert.ok(savedConfig.data.room.members.every(m=>m.ready));
+  const unchangedConfig = await api(0,"config",{roles:{wolf:1,witch:1,villager:3}});
+  assert.ok(unchangedConfig.data.room.members.every(m=>m.ready));
   assert.equal((await api(1,"start",{})).status,403);
   const started=await api(0,"start",{});
   assert.equal(started.status,200);

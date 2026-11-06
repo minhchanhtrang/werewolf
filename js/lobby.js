@@ -146,7 +146,7 @@ const renderVillageChat = createVillageChat(body => update("village-chat", body)
 
 const renderGame = createOnlineGame((targetId, kind) => {
   if (room?.game) update("act", { phaseId: room.game.phaseId, targetId, ...(kind ? { kind } : {}) });
-});
+}, () => update());
 
 
 // ── Screen Routing ──────────────────────────────────────────────────────────
@@ -541,7 +541,9 @@ resetRoom.addEventListener("click", requestReset);
 
 async function poll() {
   await update();
-  setTimeout(poll, document.hidden || !room ? 10000 : 2000);
+  const remaining = room?.game?.deadline ? room.game.deadline - Date.now() - introOffset : null;
+  const nearDeadline = remaining !== null && remaining <= 2500;
+  setTimeout(poll, document.hidden || !room ? 10000 : nearDeadline ? 250 : room.game ? 1000 : 2000);
 }
 setTimeout(poll, 2000);
 window.addEventListener("visibilitychange", () => { if (!document.hidden) update(); });

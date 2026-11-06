@@ -5,7 +5,7 @@ const phases = { voting: "Làng họp bàn", revealed: "Mở phiếu", guard: "B
 const isNight = phase => ["guard", "night", "seer", "witch"].includes(phase);
 phases.intro = "Nhận vai";
 
-export function createOnlineGame(onAction) {
+export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
   const panel = document.querySelector("#onlineGame");
   const target = document.querySelector("#onlineTarget");
   const button = document.querySelector("#onlineSubmit");
@@ -34,6 +34,7 @@ export function createOnlineGame(onAction) {
   let currentBusy = false;
   let draftTargetId = null;
   let draftPhase = "";
+  let expiredPhase = "";
   const witchPanel = document.querySelector("#witchControls");
   const healButton = document.querySelector("#witchHeal");
   const poisonButton = document.querySelector("#witchPoison");
@@ -87,6 +88,12 @@ export function createOnlineGame(onAction) {
       button.disabled = true;
       for (const control of [healButton, poisonButton, skipButton]) control.disabled = true;
       blankButton.disabled = hunterSkip.disabled = true;
+      timer.textContent = "Đang chuyển lượt…";
+      const key = current.id + ":" + current.phaseId;
+      if (expiredPhase !== key && !currentBusy) {
+        expiredPhase = key;
+        queueMicrotask(onPhaseExpired);
+      }
     }
   }
   setInterval(updateTimer, 250);

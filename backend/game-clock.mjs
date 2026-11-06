@@ -1,14 +1,14 @@
 import { advanceGame } from "./game.mjs";
 import { persistGame, pruneResults, activeRooms } from "./game-storage.mjs";
 
-export async function advanceRoom(pool, code, now = Date.now()) {
+export async function advanceRoom(pool, code, now) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const result = await client.query("SELECT role_state FROM ww_rooms WHERE code=$1 FOR UPDATE SKIP LOCKED", [code]);
     const game = result.rows[0]?.role_state;
     if (result.rows.length && !game) activeRooms.delete(code);
-    if (advanceGame(game, now) || game?.phase === "ended") await persistGame(client, code, game);
+    if (advanceGame(game, now ?? Date.now()) || game?.phase === "ended") await persistGame(client, code, game);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

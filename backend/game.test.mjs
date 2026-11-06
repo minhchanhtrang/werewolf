@@ -25,6 +25,25 @@ test("Đêm tuần tự, chặn sai vai, soi riêng, cấm bảo vệ lặp",()=
   assert.equal(g.phase,"guard"); assert.throws(()=>action(g,4,3));
 });
 
+test("Xử lý hết lượt Sói muộn không lấy mất thời gian của Tiên tri/Phù thủy",()=>{
+  const g=fixture(); next(g); assert.equal(g.phase,'night');
+  const late=g.deadline+3500;
+  advanceGame(g,late);
+  assert.equal(g.phase,'seer');assert.equal(g.phaseStartedAt,late);
+  assert.equal(g.deadline-late,20000);
+  const phaseId=g.phaseId;
+  advanceGame(g,late+19999);assert.equal(g.phaseId,phaseId);
+  const witchStart=g.deadline+4200;advanceGame(g,witchStart);
+  assert.equal(g.phase,'witch');assert.equal(g.deadline-witchStart,30000);
+});
+
+test("Server tạm ngừng lâu không tua qua nhiều vai và bỏ mất lượt",()=>{
+  const g=fixture();next(g);
+  const restored=JSON.parse(JSON.stringify(g));
+  const now=g.deadline+600000;advanceGame(restored,now);
+  assert.equal(restored.phase,'seer');assert.equal(restored.deadline,now+20000);
+});
+
 test("Phù thủy cứu đêm đầu và dùng cả hai bình, không lộ nạn nhân",()=>{
   const g=fixture(); next(g); action(g,1,8); action(g,2,8); next(g); next(g);
   assert.ok(g.players[7].alive);

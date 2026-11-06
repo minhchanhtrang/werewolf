@@ -233,7 +233,8 @@ export function advanceGame(game, now = Date.now()) {
     if (now >= game.phaseStartedAt + 3000) botsAct(game);
     if (game.turnBased && game.phase === "voting") shortenVote(game, now);
     if (now < game.deadline) break;
-    const at = game.deadline;
+    // Lượt mới được đủ thời gian kể cả khi worker/request xử lý muộn.
+    const at = now;
     if (game.phase === "intro") {
       enter(game, "guard", at);
     } else if (game.phase === "voting") {

@@ -7,7 +7,7 @@ import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
 import { createVillageChat } from "./village-chat.js";
 import { createRoleIntro } from "./role-intro.js";
-import { observeRoleVideo, desktopVideo } from "./role-media.js";
+import { observeRoleVideo, desktopVideo, ROLE_VIDEOS } from "./role-media.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
 // ── DOM References (original IDs — must remain for JS correctness) ────────
@@ -124,10 +124,11 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   const artwork = document.createElement("div"); artwork.className = "waiting-role-card__art";
   const image = document.createElement("img"); image.src = "/assets/role/role-" + role + ".png";
   image.alt = ""; image.loading = "lazy"; artwork.append(image);
-  if (role === "wolf") {
+  if (Object.hasOwn(ROLE_VIDEOS, role)) {
     const video = document.createElement("video");
     video.className = "animated-role";
-    video.dataset.src = "/assets/role/role-wolf.mp4"; video.poster = image.src;
+    video.dataset.src = ROLE_VIDEOS[role]; video.poster = image.src;
+    video.style.setProperty("--role-video-zoom", role === "wolf" ? "1.14" : "1");
     if (desktopVideo.matches) video.src = video.dataset.src;
     desktopVideo.addEventListener("change", () => {
       if (desktopVideo.matches) video.src = video.dataset.src;
@@ -420,10 +421,15 @@ function render() {
     document.querySelector("#myRole").textContent          = labels[room.game.myRole] || "Chưa có vai";
     document.querySelector("#roleDescription").textContent = descriptions[room.game.myRole] || "";
     const role = room.game.myRole;
-    const useVideo = role === "wolf" && desktopVideo.matches;
+    const videoSource = ROLE_VIDEOS[role];
+    const useVideo = Boolean(videoSource) && desktopVideo.matches;
     roleVideo.hidden = !useVideo;
     rolePortrait.hidden = useVideo;
-    if (useVideo && !roleVideo.getAttribute("src")) roleVideo.src = "/assets/role/role-wolf.mp4";
+    if (useVideo) {
+      roleVideo.poster = "/assets/role/role-" + role + ".png";
+      roleVideo.setAttribute("aria-label", labels[role]);
+      if (roleVideo.getAttribute("src") !== videoSource) roleVideo.src = videoSource;
+    }
     if (!useVideo && roleVideo.getAttribute("src")) { roleVideo.pause(); roleVideo.removeAttribute("src"); roleVideo.load(); }
     if (Object.hasOwn(labels, role)) {
       const portrait = "/assets/role/role-" + role + ".png";

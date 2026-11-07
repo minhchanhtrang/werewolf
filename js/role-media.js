@@ -2,6 +2,13 @@
 const visible = new Set();
 const timers = new Map();
 const completed = new WeakSet();
+export const ROLE_VIDEOS = {
+  wolf: "/assets/role/role-wolf.mp4",
+  seer: "/assets/role/role-seer.mp4",
+  witch: "/assets/role/role-witch.mp4",
+  idiot: "/assets/role/role-idiot.mp4",
+  villager: "/assets/role/role-villeger.mp4"
+};
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 export const desktopVideo = matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)");
 function canPlay(video) { return desktopVideo.matches && visible.has(video) && !document.hidden && !video.hidden; }

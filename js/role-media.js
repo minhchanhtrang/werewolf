@@ -1,9 +1,10 @@
 // Play visible role artwork only; keep the poster when playback is unavailable.
 const visible = new Set();
 const timers = new Map();
-const completed = new WeakSet();
 export const ROLE_VIDEOS = {
   wolf: "/assets/role/role-wolf.mp4",
+  guard: "/assets/role/role-guard.mp4",
+  hunter: "/assets/role/role-hunter.mp4",
   seer: "/assets/role/role-seer.mp4",
   witch: "/assets/role/role-witch.mp4",
   idiot: "/assets/role/role-idiot.mp4",
@@ -17,7 +18,7 @@ function stopSurprise(video) {
   video.pause(); video.classList.remove("is-playing");
 }
 function scheduleSurprise(video) {
-  if (completed.has(video) || timers.has(video) || video.classList.contains("is-playing") || video.error || reducedMotion.matches) return;
+  if (timers.has(video) || video.classList.contains("is-playing") || video.error || reducedMotion.matches) return;
   timers.set(video, setTimeout(() => {
     timers.delete(video);
     if (!canPlay(video) || reducedMotion.matches) return;
@@ -44,6 +45,15 @@ function sync() {
   }
 }
 export function observeRoleVideo(video) {
+  function adjustSpeed() {
+    // Keep short clips unchanged; play ~10-second artwork in ~5 seconds.
+    const speed = Number.isFinite(video.duration) && video.duration >= 9 && video.duration <= 11 ? 2 : 1;
+    video.defaultPlaybackRate = speed;
+    video.playbackRate = speed;
+  }
+  video.addEventListener("loadedmetadata", adjustSpeed);
+  video.addEventListener("durationchange", adjustSpeed);
+  if (video.readyState >= 1) adjustSpeed();
   observer.observe(video);
   if (video.dataset.surprise) {
     video.addEventListener("playing", () => {
@@ -51,8 +61,8 @@ export function observeRoleVideo(video) {
       else stopSurprise(video);
     });
     video.addEventListener("ended", () => {
-      completed.add(video);
       stopSurprise(video);
+      if (canPlay(video)) scheduleSurprise(video);
     });
     video.addEventListener("error", () => stopSurprise(video));
   }

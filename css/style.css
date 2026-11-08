@@ -1305,6 +1305,8 @@ h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); letter-spa
 }
 .role-card .role-card__frame video { object-fit: cover; object-position: 50% 35%; background: #080d14; }
 .role-card-intro__img video { object-position: 50% 35%; }
+.role-card .role-card__frame video[data-role="witch"],
+.waiting-role-card__art video[data-role="witch"] { object-fit: cover; object-position: 49% 35%; background: #10171c; transform: none; }
 .role-card h3     { margin: 10px 0; font-family: "Josefin Sans", system-ui, sans-serif; font-size: 22px; }
 .role-card p      { font-size: 13px; line-height: 1.6; color: #e0d9c6; }
 #roleDescription { white-space: pre-line; }

@@ -127,6 +127,7 @@ for (const [role, label] of Object.entries(ROLE_LABELS)) {
   if (Object.hasOwn(ROLE_VIDEOS, role)) {
     const video = document.createElement("video");
     video.className = "animated-role";
+    video.dataset.role = role;
     video.dataset.src = ROLE_VIDEOS[role]; video.poster = image.src;
     video.style.setProperty("--role-video-zoom", role === "wolf" ? "1.14" : "1");
     if (desktopVideo.matches) video.src = video.dataset.src;
@@ -426,6 +427,7 @@ function render() {
     roleVideo.hidden = !useVideo;
     rolePortrait.hidden = useVideo;
     if (useVideo) {
+      roleVideo.dataset.role = role;
       roleVideo.poster = "/assets/role/role-" + role + ".png";
       roleVideo.setAttribute("aria-label", labels[role]);
       if (roleVideo.getAttribute("src") !== videoSource) roleVideo.src = videoSource;

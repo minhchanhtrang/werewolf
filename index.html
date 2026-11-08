@@ -438,7 +438,7 @@
       </div>
 
   <section id="villageChat" class="village-chat" aria-label="Chat dân làng" hidden>
-    <h3>Chat dân làng <button id="toggleVillageChat" class="village-chat__toggle" type="button" aria-expanded="false" aria-controls="villageChatMessages villageChatForm">Mở chat</button></h3>
+    <h3><span>Chat dân làng </span><button id="toggleVillageChat" class="village-chat__toggle" type="button" aria-expanded="false" aria-controls="villageChatMessages villageChatForm">Mở chat</button></h3>
     <ol id="villageChatMessages" role="log" aria-live="polite" aria-label="Tin nhắn chung"></ol>
     <form id="villageChatForm"><label class="wolf-chat__label" for="villageChatInput">Tin nhắn chung</label><input id="villageChatInput" maxlength="300" autocomplete="off" required placeholder="Nhắn với dân làng…"><button id="villageChatSend" type="submit" class="btn btn--primary btn--sm">Gửi</button></form>
     <p id="villageChatStatus" role="status"></p>
@@ -503,7 +503,7 @@
   </section>
   <aside id="wolfChoices" class="wolf-choices" hidden aria-label="Mục tiêu của phe Sói"><strong>Sói đang chọn</strong><ul id="wolfChoicesList"></ul></aside>
   <section id="wolfChat" class="wolf-chat" aria-label="Chat riêng phe Sói" hidden>
-    <div class="wolf-chat__heading"><span>Chat Sói <span id="wolfChatCount"></span></span><button id="toggleWolfChat" class="village-chat__toggle" type="button" aria-expanded="false" aria-controls="wolfChatMessages wolfChatForm wolfChatStatus">Mở chat</button></div>
+    <div class="wolf-chat__heading"><span>Chat Sói</span><button id="toggleWolfChat" class="village-chat__toggle" type="button" aria-expanded="false" aria-controls="wolfChatMessages wolfChatForm wolfChatStatus">Mở chat</button></div>
     <ol id="wolfChatMessages" aria-label="Tin nhắn riêng giữa Sói còn sống"></ol>
     <form id="wolfChatForm"><label class="wolf-chat__label" for="wolfChatInput">Tin nhắn cho đồng đội</label><input id="wolfChatInput" maxlength="300" required autocomplete="off" placeholder="Nhắn cho đồng đội…"><button id="wolfChatSend" class="btn btn--primary btn--sm" type="submit">Gửi</button></form>
     <p id="wolfChatStatus" class="hint" role="status"></p>

@@ -22,7 +22,7 @@ export function createWolfChat(send) {
       const ok = await send({ gameId, text });
       if (operation !== epoch) return;
       if (ok && input.value === text) input.value = "";
-      status.textContent = ok ? "Đã gửi" : "Chưa gửi được. Hãy thử lại.";
+      status.textContent = ok ? "" : "Chưa gửi được. Hãy thử lại.";
     } finally { if (operation === epoch) { sending = false; button.disabled = !current; } }
   });
   return function render(room, busy) {
@@ -43,13 +43,12 @@ export function createWolfChat(send) {
       const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 45;
       list.replaceChildren();
       for (const message of current.messages) {
-        const item = document.createElement("li"), name = document.createElement("strong"), text = document.createElement("p");
-        name.textContent = message.name; text.textContent = message.text;
+        const item = document.createElement("li"), name = document.createElement("strong"), text = document.createElement("span");
+        name.textContent = message.name + ": "; text.textContent = message.text;
         item.append(name, text); list.append(item);
       }
       if (atBottom) list.scrollTop = list.scrollHeight;
       signature = key;
     }
-    document.querySelector("#wolfChatCount").textContent = current.messages.length ? " · " + current.messages.length : "";
   };
 }

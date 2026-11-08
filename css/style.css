@@ -46,6 +46,9 @@
 #wolfChatInput { width: 0; flex: 1; min-width: 0; background: #080d14; color: #f0ead8; border: 1px solid #52665b; border-radius: 4px; padding: 6px; font-size: 12px; }
 #wolfChatSend { padding: 5px 8px; font-size: 11px; }
 #wolfChatStatus:empty { display: none; }
+#wolfChatMessages li { line-height: 1.5; white-space: pre-wrap; }
+#wolfChatMessages strong { font-size: inherit; }
+#wolfChoices > strong { display: block; text-align: center; color: var(--gold, #f0c060); }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -1903,17 +1906,23 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
   height: var(--chat-space); min-height: 0;
 }
 #screen-game:has(#wolfChat:not([hidden])) .village-chat {
-  height: calc((var(--chat-space) - 8px) * .7);
+  height: calc((var(--chat-space) - 8px) * .65);
 }
 #screen-game .wolf-chat {
   display: flex; flex-direction: column;
-  height: calc((var(--chat-space) - 8px) * .3); min-height: 0;
+  height: calc((var(--chat-space) - 8px) * .35); min-height: 0;
 }
 #screen-game #villageChatMessages, #screen-game #wolfChatMessages {
   flex: 1; min-height: 0; height: auto; max-height: none;
 }
 #screen-game #villageChatForm, #screen-game #wolfChatForm,
 #screen-game .village-chat h3, #screen-game .wolf-chat__heading { flex-shrink: 0; }
+#screen-game .wolf-chat__heading, #screen-game .village-chat h3 {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center; gap: 4px; text-align: center;
+}
+#screen-game .wolf-chat__heading > span, #screen-game .village-chat h3 > span { grid-column: 2; }
+#screen-game .wolf-chat__heading > button, #screen-game .village-chat h3 > button { grid-column: 3; justify-self: end; padding: 4px; font-size: 10px; white-space: nowrap; }
 @media (max-width: 650px) {
   #screen-game { --chat-space: max(0px, calc(100dvh - var(--game-header-height, 120px) - var(--game-footer-height, 112px) - 16px)); }
   #screen-game #villageChat.village-chat:not(.is-open) { height: auto; }

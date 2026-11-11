@@ -1,4 +1,4 @@
-import { createScene } from "./scene.js";
+﻿import { createScene } from "./scene.js";
 import { ROLE_LABELS } from "./rules.js";
 import { createPhaseArt } from "./phase-art.js";
 
@@ -17,6 +17,30 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
   const result = document.querySelector("#gameResult");
   const resultPlayers = document.querySelector("#resultPlayers");
   const guide = document.querySelector("#phaseGuide");
+  const voteSummary = document.querySelector('#voteSummary');
+  const voteSummaryList = document.querySelector('#voteSummaryList');
+  let voteSummaryKey = '';
+  function renderVoteSummary(game) {
+    voteSummary.hidden = game?.phase !== 'voting';
+    const rows = game?.phase === 'voting'
+      ? game.roster.filter(player => player.alive).map(player => ({
+        id: player.id, name: player.name, count: game.voteTally?.[player.id] || 0
+      })).sort((a, b) => b.count - a.count)
+      : [];
+    const key = JSON.stringify(rows);
+    if (key === voteSummaryKey) return;
+    voteSummaryKey = key;
+    voteSummaryList.replaceChildren();
+    for (const row of rows) {
+      const item = document.createElement('li');
+      const name = document.createElement('span'), count = document.createElement('strong');
+      name.textContent = row.name;
+      count.textContent = row.count + ' phiếu';
+      item.classList.toggle('has-votes', row.count > 0);
+      item.append(name, count);
+      voteSummaryList.append(item);
+    }
+  }
   let resultKey = "";
   const notice = document.querySelector("#phaseNotice");
   const renderPhaseArt = createPhaseArt(document.querySelector("#phaseArt"));
@@ -118,6 +142,7 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
   function render(game, id, busy) {
     currentBusy = busy;
     current = game?.roster ? game : null;
+    renderVoteSummary(current);
     userId = id;
     panel.hidden = !current;
     if (!current) {
@@ -258,7 +283,7 @@ export function createOnlineGame(onAction, onPhaseExpired = () => {}) {
     healButton.disabled = potionsLocked || !game.witch?.canHeal;
     poisonButton.disabled = potionsLocked || !game.witch?.poison || game.witch?.choice?.poisonId != null;
     skipButton.disabled = potionsLocked;
-    poisonButton.textContent = poisonMode ? "Hủy chọn bình độc" : "Chọn bình độc";
+    document.querySelector("#witchPoisonLabel").textContent = poisonMode ? "Hủy chọn bình độc" : "Chọn bình độc";
     button.textContent = label;
     if (!eligible.some(player => player.id === draftTargetId)) draftTargetId = null;
     button.disabled = busy || draftTargetId === null;

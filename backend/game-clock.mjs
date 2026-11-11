@@ -1,6 +1,7 @@
 import { advanceGame } from "./game.mjs";
 import { persistGame, pruneResults, activeRooms, forgetResult } from "./game-storage.mjs";
 import { pruneAbandonedRooms, trackedRooms, refreshTrackedRooms } from "./room-cleanup.mjs";
+import { pruneDisconnectedMembers } from './presence.mjs';
 
 export async function advanceRoom(pool, code, now) {
   const client = await pool.connect();
@@ -25,6 +26,7 @@ export function createClockTick(pool) {
   let initialized = false;
   let running = false;
   let lastCleanup = 0;
+  let lastPresenceCleanup = 0;
   return async () => {
     if (running) return;
     running = true;
@@ -37,6 +39,10 @@ export function createClockTick(pool) {
           if (room.version === "1") activeRooms.add(room.code);
         }
         initialized = true;
+      }
+      if (trackedRooms.size && Date.now() - lastPresenceCleanup >= 2000) {
+        await pruneDisconnectedMembers(pool);
+        lastPresenceCleanup = Date.now();
       }
       if (trackedRooms.size && Date.now() - lastCleanup >= 30000) {
         await pruneAbandonedRooms(pool);

@@ -324,6 +324,10 @@ export function gameView(game, userId) {
       choice: game.phase === "witch" ? game.witchChoice : null
     } : null,
     voteCount: game.phase === "voting" ? Object.keys(game.votes).length : null,
+    voteTally: game.phase === "voting" ? Object.values(game.votes).reduce((counts, targetId) => {
+      if (targetId != null) counts[targetId] = (counts[targetId] || 0) + 1;
+      return counts;
+    }, {}) : {},
     revealedVotes: game.revealedVotes, history: game.history
   };
 }

@@ -5,6 +5,7 @@ import { once } from "node:events";
 import { randomBytes, createHash } from "node:crypto";
 import { createDatabase, initializeDatabase } from "./database.mjs";
 import { createRooms } from "./rooms.mjs";
+import { pruneDisconnectedMembers } from './presence.mjs';
 
 test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và chuyển chủ", {
   skip: !process.env.PGPASSWORD || !process.env.PGDATABASE
@@ -44,6 +45,10 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   const created=await api(0,"create",{});
   assert.equal(created.status,200);
   const code=created.data.room.code;
+  const waitingChat = await api(0, 'lobby-chat', { roomCode: code, text: 'Hello waiting room' });
+  assert.equal(waitingChat.status, 200);
+  assert.equal(waitingChat.data.room.lobbyMessages.at(-1).text, 'Hello waiting room');
+  assert.equal((await api(1, 'lobby-chat', { roomCode: code, text: 'outsider' })).status, 404);
   const first = await fetch(origin + "/api/rooms/current", { headers: { Cookie: cookies[0] } });
   const tag = first.headers.get("ETag"); await first.json();
   await pool.query("UPDATE ww_rooms SET last_active_at=NOW()-INTERVAL '2 minutes' WHERE code=$1", [code]);
@@ -51,6 +56,27 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   assert.equal(unchanged.status, 304);
   assert.equal((await pool.query("SELECT last_active_at > NOW()-INTERVAL '10 seconds' AS fresh FROM ww_rooms WHERE code=$1", [code])).rows[0].fresh, true);
   assert.equal((await api(1,"join",{code})).status,200);
+  const reloadPresence = {
+    query: async () => ({ rows: [{ room_code: code }] }),
+    connect: () => pool.connect()
+  };
+  // Reload: request exit, then reconnect before cleanup; membership and host survive.
+  assert.equal((await api(0, 'disconnect', { roomCode: code })).status, 200);
+  assert.ok((await pool.query('SELECT exit_requested_at FROM ww_room_members WHERE user_id=$1', [ids[0]])).rows[0].exit_requested_at);
+  await pruneDisconnectedMembers(reloadPresence);
+  // The early reconnect cancels exit before the full room UI/auth modules render.
+  assert.equal((await api(0, 'reconnect', {})).status, 200);
+  assert.equal((await pool.query('SELECT exit_requested_at FROM ww_room_members WHERE user_id=$1', [ids[0]])).rows[0].exit_requested_at, null);
+  assert.equal((await api(0, 'current')).data.room.host_id, ids[0]);
+  assert.equal((await pool.query('SELECT exit_requested_at FROM ww_room_members WHERE user_id=$1', [ids[0]])).rows[0].exit_requested_at, null);
+  // A real close without a reconnect expires after the grace period.
+  await api(1, 'disconnect', { roomCode: code });
+  await pool.query("UPDATE ww_room_members SET exit_requested_at=NOW()-INTERVAL '11 seconds' WHERE user_id=$1", [ids[1]]);
+  await pruneDisconnectedMembers(reloadPresence);
+  assert.equal((await api(1, 'current')).data.room, null);
+  assert.equal((await api(1, 'join', { code })).status, 200);
+  assert.equal((await api(1, 'current')).data.room.lobbyMessages.at(-1).text, 'Hello waiting room');
+  assert.equal((await api(1, 'leave', { roomCode: '000000' === code ? '111111' : '000000' })).status, 409);
   assert.equal((await api(1,"kick",{userId:ids[0]})).status,403);
   assert.equal((await api(0,"kick",{userId:ids[0]})).status,400);
   assert.equal((await api(0,"kick",{userId:-1})).status,400);
@@ -68,26 +94,36 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
     const added=await api(0,"bots",{fill:true});
     assert.equal(added.data.room.members.filter(m=>m.bot).length,i+1);
   }
+  for (const count of [2, 1, 0, 0]) {
+    const removed = await api(0, 'bots', { fill: false });
+    assert.equal(removed.status, 200);
+    assert.equal(removed.data.room.members.filter(m => m.bot).length, count);
+  }
+  for (let i = 0; i < 3; i++) await api(0, 'bots', { fill: true });
   assert.equal((await api(1,"config",{roles:{wolf:1,witch:1,villager:3}})).status,403);
   assert.equal((await api(0,"config",{roles:{wolf:1,villager:2}})).status,400);
   assert.equal((await api(0,"config",{roles:{wolf:1,witch:1,villager:3}})).status,200);
-  assert.equal((await api(0,"ready",{ready:true})).status,200);
+  assert.equal((await api(0,"ready",{ready:true})).status,404);
   const changedConfig = await api(0,"config",{roles:{wolf:1,seer:1,villager:3}});
   assert.equal(changedConfig.status,200);
-  assert.equal(changedConfig.data.room.members.find(m=>m.id===ids[0]).ready,true);
+  assert.equal(changedConfig.data.room.members.find(m=>m.id===ids[0]).ready,false);
   assert.equal(changedConfig.data.room.members.find(m=>m.id===ids[1]).ready,false);
-  assert.equal((await api(0,"start",{})).status,409);
-  await api(1,"ready",{ready:true});
   const savedConfig = await api(0,"config",{roles:{wolf:1,witch:1,villager:3}});
   assert.equal(savedConfig.status,200);
-  assert.ok(savedConfig.data.room.members.every(m=>m.ready));
+  assert.ok(savedConfig.data.room.members.filter(m=>!m.bot).every(m=>!m.ready));
   const unchangedConfig = await api(0,"config",{roles:{wolf:1,witch:1,villager:3}});
-  assert.ok(unchangedConfig.data.room.members.every(m=>m.ready));
+  assert.ok(unchangedConfig.data.room.members.filter(m=>!m.bot).every(m=>!m.ready));
   assert.equal((await api(1,"start",{})).status,403);
   const started=await api(0,"start",{});
   assert.equal(started.status,200);
   assert.equal(started.data.room.game.roster.length,5);
   assert.equal(started.data.room.game.phase,"intro");
+  await api(0, 'leave', { roomCode: code, pageExit: true });
+  const refreshedGame = (await api(0, 'current')).data.room.game;
+  assert.equal(refreshedGame.id, started.data.room.game.id);
+  assert.equal(refreshedGame.roster.find(player => player.id === ids[0]).alive, true);
+  assert.deepEqual(started.data.room.lobbyMessages, []);
+  assert.equal((await api(0, 'lobby-chat', { roomCode: code, text: 'too late' })).status, 409);
   const secret=(await pool.query("SELECT role_state FROM ww_rooms WHERE code=$1",[code])).rows[0].role_state;
   assert.equal(secret.players.filter(p=>p.role==="witch").length,1);
   assert.equal(secret.players.filter(p=>p.role==="wolf").length,1);
@@ -132,8 +168,15 @@ test("PostgreSQL: phòng chờ, quay lại, sẵn sàng, giới hạn chỗ và 
   assert.equal((await pool.query("SELECT role_state FROM ww_rooms WHERE code=$1",[code])).rows[0].role_state,null);
   assert.equal((await api(1,"reset",{})).status,403);
   assert.equal((await api(0,"reset",{})).data.room.game,null);
-  await api(0,"leave",{});
+  await pool.query("UPDATE ww_room_members SET last_seen_at=NOW()-INTERVAL '3 minutes' WHERE user_id=$1", [ids[0]]);
+  const scopedPresence = {
+    query: async () => ({ rows: [{ room_code: code }] }),
+    connect: () => pool.connect()
+  };
+  await pruneDisconnectedMembers(scopedPresence);
+  assert.equal((await api(0, 'current')).data.room, null);
   assert.equal((await api(1,"current")).data.room.host_id,ids[1]);
-  await api(1,"leave",{});
+  await pool.query("UPDATE ww_room_members SET last_seen_at=NOW()-INTERVAL '3 minutes' WHERE user_id=$1", [ids[1]]);
+  await pruneDisconnectedMembers(scopedPresence);
   assert.equal((await api(1,"current")).data.room,null);
 });

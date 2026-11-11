@@ -15,8 +15,8 @@ test("Clock stops querying an empty database and resumes room cleanup when neede
   assert.equal(queries.length, 1, "Idle ticks must not keep Neon awake");
   trackedRooms.add("ABC123");
   await tick();
-  assert.equal(queries.length, 3);
+  assert.equal(queries.length, 4);
   assert.equal(trackedRooms.size, 0);
   await tick();
-  assert.equal(queries.length, 3);
+  assert.equal(queries.length, 4);
 });

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+﻿import { randomBytes } from "node:crypto";
 import { getSessionUser, json, readBody } from "./auth.mjs";
 import { dealRoles, privateRoleView } from "./roles.mjs";
 import { beginGame, act, advanceGame, leaveGame } from "./game.mjs";
@@ -11,6 +11,7 @@ import { roomTag } from "./http-cache.mjs";
 import { readVillageChat, sendVillageChat } from "./village-chat.mjs";
 import { requestReplay, voteReplay, settleReplay } from "./replay.mjs";
 import { touchRoom } from "./room-cleanup.mjs";
+import { appendLobbyMessage } from './lobby-chat.mjs';
 
 const fault = (status, message) => Object.assign(new Error(message), { status });
 async function resetToWaiting(db, code) {
@@ -32,7 +33,7 @@ async function removeGameMember(db, code, game, userId) {
 
 async function currentRoom(db, userId) {
   // Một câu truy vấn để ảnh chụp phòng và thành viên nhất quán.
-  const result = await db.query(`SELECT r.code,r.host_id,r.bot_count,r.role_state,r.capacity,r.role_config,
+  const result = await db.query(`SELECT r.code,r.host_id,r.bot_count,r.role_state,r.capacity,r.role_config,r.lobby_messages,
     json_agg(json_build_object('id',u.id,'username',u.username,'ready',m.ready)
       ORDER BY m.joined_at,m.user_id) AS members
     FROM ww_room_members mine JOIN ww_rooms r ON r.code=mine.room_code
@@ -47,6 +48,7 @@ async function currentRoom(db, userId) {
   return {
     code: row.code, host_id: row.host_id, capacity: MAX_PLAYERS, roleConfig: row.role_config,
     members: [...row.members, ...bots],
+    lobbyMessages: game ? [] : row.lobby_messages || [],
     game: privateRoleView(game, userId),
     wolfChat: readWolfChat(game, userId), villageChat: readVillageChat(game, userId)
   };
@@ -56,7 +58,9 @@ export function createRooms(pool) {
   return async (request, response, pathname) => {
     const actions = {
       "/api/rooms/current": "GET", "/api/rooms/create": "POST", "/api/rooms/kick": "POST", "/api/rooms/village-chat": "POST",
-      "/api/rooms/join": "POST", "/api/rooms/ready": "POST", "/api/rooms/leave": "POST", "/api/rooms/replay-vote": "POST",
+      "/api/rooms/lobby-chat": "POST",
+      "/api/rooms/disconnect": "POST", "/api/rooms/reconnect": "POST",
+      "/api/rooms/join": "POST", "/api/rooms/leave": "POST", "/api/rooms/replay-vote": "POST",
       "/api/rooms/bots": "POST", "/api/rooms/config": "POST", "/api/rooms/start": "POST", "/api/rooms/reset": "POST", "/api/rooms/act": "POST", "/api/rooms/wolf-chat": "POST"
     };
     if (!actions[pathname]) return json(response, 404, { error: "Không có API phòng này." });
@@ -67,9 +71,15 @@ export function createRooms(pool) {
     try {
       const user = await getSessionUser(pool, request);
       if (!user) throw fault(401, "Hãy đăng nhập để vào phòng.");
+      if (pathname.endsWith('/reconnect')) {
+        await readBody(request);
+        await pool.query('UPDATE ww_room_members SET last_seen_at=NOW(),exit_requested_at=NULL WHERE user_id=$1', [user.id]);
+        return json(response, 200, { ok: true });
+      }
       if (request.method === "GET") {
         const membership = await pool.query("SELECT room_code FROM ww_room_members WHERE user_id=$1", [user.id]);
         if (membership.rows[0]) {
+          await pool.query("UPDATE ww_room_members SET last_seen_at=NOW(),exit_requested_at=NULL WHERE user_id=$1", [user.id]);
           await touchRoom(pool, membership.rows[0].room_code);
           await advanceRoom(pool, membership.rows[0].room_code);
         }
@@ -117,7 +127,7 @@ export function createRooms(pool) {
         }
       } else {
         if (!code) throw fault(404, "Bạn chưa ở trong phòng.");
-        const room = await client.query("SELECT host_id,role_state FROM ww_rooms WHERE code=$1 FOR UPDATE", [code]);
+        const room = await client.query("SELECT host_id,role_state,lobby_messages FROM ww_rooms WHERE code=$1 FOR UPDATE", [code]);
         if (!room.rows.length) throw fault(404, "Phòng không còn tồn tại.");
         if (["/api/rooms/bots", "/api/rooms/config", "/api/rooms/start", "/api/rooms/reset"].includes(pathname)) {
           if (room.rows[0].host_id !== user.id) throw fault(403, "Chỉ chủ phòng được thực hiện thao tác này.");
@@ -143,18 +153,24 @@ export function createRooms(pool) {
               const humans = current.members.filter(member => !member.bot).length;
               if (body.fill && current.members.length >= current.capacity) throw fault(409, "Phòng đã đầy, không thể thêm bot.");
               const bots = current.members.length - humans;
-              await client.query("UPDATE ww_rooms SET bot_count=$1 WHERE code=$2", [body.fill ? bots + 1 : 0, code]);
+              await client.query("UPDATE ww_rooms SET bot_count=$1 WHERE code=$2", [body.fill ? bots + 1 : Math.max(0, bots - 1), code]);
             } else {
-              if (!canStartRoom(current.members, current.capacity)) throw fault(409, "Cần ít nhất 5 người và tất cả người thật sẵn sàng.");
+              if (!canStartRoom(current.members, current.capacity)) throw fault(409, "Cần từ 5 đến 20 người trong phòng để bắt đầu.");
               let deal;
               if (!current.roleConfig) throw fault(400, "Chủ phòng cần lưu bộ vai trước khi bắt đầu.");
               try { deal = dealRoles(current.members, current.roleConfig); }
               catch (error) { throw fault(400, error.message); }
               const game = beginGame(deal, current.members);
+              await client.query("UPDATE ww_rooms SET lobby_messages='[]' WHERE code=$1", [code]);
               forgetResult(code);
               await persistGame(client, code, game);
             }
           }
+        } else if (pathname.endsWith('/lobby-chat')) {
+          if (room.rows[0].role_state || finishedResult(code)) throw fault(409, 'Chat phòng chờ chỉ dùng trước khi vào game.');
+          if (body.roomCode !== code) throw fault(409, 'Phòng đã thay đổi.');
+          const messages = appendLobbyMessage(room.rows[0].lobby_messages || [], user, body.text);
+          await client.query('UPDATE ww_rooms SET lobby_messages=$1 WHERE code=$2', [JSON.stringify(messages), code]);
         } else if (pathname.endsWith("/kick")) {
           if (room.rows[0].host_id !== user.id) throw fault(403, "Chỉ chủ phòng được kick người chơi.");
           if (room.rows[0].role_state || finishedResult(code)) throw fault(409, "Chỉ được kick người chơi trong phòng chờ.");
@@ -180,23 +196,29 @@ export function createRooms(pool) {
           advanceGame(game);
           act(game, user.id, body);
           await persistGame(client, code, game);
-        } else if (pathname.endsWith("/ready")) {
-          if (room.rows[0].role_state) throw fault(409, "Phòng đã chia vai.");
-          if (typeof body.ready !== "boolean") throw fault(400, "Trạng thái sẵn sàng không hợp lệ.");
-          await client.query("UPDATE ww_room_members SET ready=$1 WHERE user_id=$2", [body.ready, user.id]);
         } else {
-          await removeGameMember(client, code, room.rows[0].role_state, user.id);
-          await client.query("DELETE FROM ww_room_members WHERE user_id=$1", [user.id]);
-          const remaining = await client.query("SELECT user_id FROM ww_room_members WHERE room_code=$1 ORDER BY joined_at,user_id LIMIT 1", [code]);
-          if (!remaining.rows.length) {
-            await client.query("DELETE FROM ww_rooms WHERE code=$1", [code]);
-            forgetResult(code);
+          if (body.roomCode && body.roomCode !== code) throw fault(409, 'Phòng đã thay đổi.');
+          if (pathname.endsWith('/disconnect') || body.pageExit === true) {
+            // A reload fires the same browser events as closing the page.
+            // The next poll cancels this short grace period if the player returns.
+            await client.query('UPDATE ww_room_members SET exit_requested_at=NOW() WHERE user_id=$1', [user.id]);
+          } else {
+            await removeGameMember(client, code, room.rows[0].role_state, user.id);
+            await client.query("DELETE FROM ww_room_members WHERE user_id=$1", [user.id]);
+            const remaining = await client.query("SELECT user_id FROM ww_room_members WHERE room_code=$1 ORDER BY joined_at,user_id LIMIT 1", [code]);
+            if (!remaining.rows.length) {
+              await client.query("DELETE FROM ww_rooms WHERE code=$1", [code]);
+              forgetResult(code);
+            }
+            else if (room.rows[0].host_id === user.id) await client.query("UPDATE ww_rooms SET host_id=$1 WHERE code=$2", [remaining.rows[0].user_id, code]);
           }
-          else if (room.rows[0].host_id === user.id) await client.query("UPDATE ww_rooms SET host_id=$1 WHERE code=$2", [remaining.rows[0].user_id, code]);
         }
       }
       const room = await currentRoom(client, user.id);
-      if (room) await touchRoom(client, room.code);
+      if (room) {
+        await touchRoom(client, room.code);
+        await client.query('UPDATE ww_room_members SET last_seen_at=NOW() WHERE user_id=$1', [user.id]);
+      }
       await client.query("COMMIT");
       return json(response, 200, { room }, request, { ETag: roomTag(room) });
     } catch (error) {

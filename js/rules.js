@@ -26,5 +26,5 @@ export function roleCounts(count) {
 }
 
 export function canStartRoom(members, capacity) {
-  return members.length >= MIN_PLAYERS && members.length <= capacity && members.every(member => member.ready);
+  return members.length >= MIN_PLAYERS && members.length <= capacity;
 }

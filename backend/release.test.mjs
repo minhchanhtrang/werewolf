@@ -48,7 +48,7 @@ test("Chia vai 5–20 người, mỗi ván một Phù thủy; tối thiểu 5 ng
     if (n <= 10) assert.equal(new Set(game.players.map(p => p.character)).size, n);
   }
   assert.equal(canStartRoom(Array(4).fill({ ready: true }), 20), false);
-  assert.equal(canStartRoom(Array(5).fill({ ready: false }), 20), false);
+  assert.equal(canStartRoom(Array(5).fill({ ready: false }), 20), true);
   assert.throws(() => roleCounts(4)); assert.throws(() => roleCounts(21));
 });
 

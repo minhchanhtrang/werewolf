@@ -1,4 +1,4 @@
-// lobby.js — Room management and screen routing for Ma Sói · Đêm bên lửa trại
+﻿// lobby.js — Room management and screen routing for Ma Sói · Đêm bên lửa trại
 // Updated: render() now switches between #screen-lobby, #screen-waiting, #screen-game.
 // All existing game/room logic is preserved unchanged.
 
@@ -7,6 +7,7 @@ import { createOnlineGame } from "./online-game.js";
 import { createWolfChat } from "./wolf-chat.js";
 import { createVillageChat } from "./village-chat.js";
 import { createRoleIntro } from "./role-intro.js";
+import { createRoomFeatures } from './room-features.js';
 import { observeRoleVideo, desktopVideo, ROLE_VIDEOS } from "./role-media.js";
 import { MIN_PLAYERS, MAX_PLAYERS, canStartRoom, ROLE_LABELS, validateRoles } from "./rules.js";
 
@@ -16,7 +17,6 @@ const createButton = document.querySelector("#createRoom");
 const joinForm     = document.querySelector("#joinRoomForm");
 const codeInput    = document.querySelector("#roomCodeInput");
 const joinButton   = document.querySelector("#joinRoom");
-const readyButton  = document.querySelector("#readyRoom");
 const leaveButton  = document.querySelector("#leaveRoom");
 const entry        = document.querySelector("#roomEntry");
 const waiting      = document.querySelector("#waitingRoom");
@@ -186,6 +186,7 @@ document.querySelector("#roleConfigForm").addEventListener("submit", async event
 });
 const renderWolfChat = createWolfChat(body => update("wolf-chat", body));
 const renderVillageChat = createVillageChat(body => update("village-chat", body));
+const renderRoomFeatures = createRoomFeatures((action, body) => update(action, body));
 
 const renderGame = createOnlineGame((targetId, kind) => {
   if (room?.game) update("act", { phaseId: room.game.phaseId, targetId, ...(kind ? { kind } : {}) });
@@ -319,6 +320,7 @@ function render() {
   renderGame(room?.game, user?.id, busy);
   renderWolfChat(room, busy);
   renderVillageChat(room, busy);
+  if (!room) renderRoomFeatures(room, busy);
   const activeGame = room?.game && room.game.phase !== "ended";
   const replay = activeGame ? room.game.replayVote : null;
   const openReplay = replay?.status === "open";
@@ -352,7 +354,7 @@ function render() {
   }
 
   createButton.disabled = joinButton.disabled = codeInput.disabled = !user || busy;
-  readyButton.disabled  = leaveButton.disabled = !user || busy;
+  leaveButton.disabled = !user || busy;
 
   if (!room) {
     copyStatus.textContent = "";
@@ -368,7 +370,6 @@ function render() {
   startRoom.hidden ||= dealt;
   resetRoom.hidden ||= !dealt;
   resetRoom.textContent = room.game?.phase === "ended" ? "Về phòng chờ" : "Đề nghị chơi lại";
-  readyButton.hidden = dealt;
 
   const resultBtn = document.querySelector("#resetRoom-result");
   const resultHint = document.querySelector("#resultHostHint");
@@ -394,15 +395,16 @@ function render() {
   try { validateRoles(room.roleConfig, count); validConfig = true; } catch {}
   document.querySelector("#roleConfigStatus").textContent = count < MIN_PLAYERS
     ? "Khi đủ ít nhất 5 người, chủ phòng chọn tổng số vai bằng số người trong phòng."
-    : validConfig ? "Bộ vai đã lưu. Mọi người hãy sẵn sàng." : "Chủ phòng cần lưu bộ vai có tổng bằng " + count + " người.";
+    : validConfig ? "Bộ vai đã lưu. Chủ phòng có thể bắt đầu." : "Chủ phòng cần lưu bộ vai có tổng bằng " + count + " người.";
 
   document.querySelector("#waitingRules").textContent = count < MIN_PLAYERS
     ? "Cần thêm " + (MIN_PLAYERS - count) + " người để có thể bắt đầu."
     : room.roleConfig ? Object.entries(room.roleConfig).filter(([, n]) => n).map(([r,n]) => n + " " + ROLE_LABELS[r]).join(" · ") : "Chủ phòng hãy chọn bộ vai bên dưới.";
 
-  fillBots.textContent   = "Thêm 1 bot";
+  fillBots.textContent = "Thêm 1 bot";
   startRoom.disabled     = busy || !validConfig || !canStartRoom(room.members, capacity);
   fillBots.disabled      = busy || room.members.length >= capacity;
+  removeBots.textContent = "Xóa 1 bot";
   removeBots.disabled    = busy || !room.members.some(member => member.bot);
 
   if (room.game) {
@@ -446,11 +448,8 @@ function render() {
 
   codeElement.textContent  = room.code;
   countElement.textContent = room.members.length + " người";
-  progress.textContent     = room.members.filter(m => m.ready).length + "/" + room.members.length + " người sẵn sàng";
+  progress.textContent = room.members.length + " người trong phòng";
 
-  const me = room.members.find(m => m.id === user?.id);
-  readyButton.textContent = me?.ready ? "Hủy sẵn sàng" : "Sẵn sàng";
-  readyButton.setAttribute("aria-pressed", String(Boolean(me?.ready)));
 
   members.replaceChildren();
   room.members.forEach((member, index) => {
@@ -464,8 +463,9 @@ function render() {
     const player    = room.game?.roster?.find(p => p.id === member.id);
     status.textContent = player
       ? player.alive ? "Còn sống" : "Đã bị loại"
-      : member.ready ? "Sẵn sàng" : "Đang chờ";
-    item.classList.toggle("is-ready", member.ready);
+      : "Đã vào phòng";
+    if (!player) status.textContent = 'Đã vào phòng';
+    item.classList.toggle("is-ready", !player || player.alive);
     item.append(name, status);
     if (host && !dealt && !member.bot && member.id !== user?.id) {
       item.append(kickButton(member));
@@ -476,6 +476,7 @@ function render() {
   // Keep mirror elements in sync after full render
   updateRoleIntro();
   _syncWaitingRoomUI();
+  renderRoomFeatures(room, busy);
 }
 
 // ── Network ─────────────────────────────────────────────────────────────────
@@ -550,10 +551,6 @@ createButton.addEventListener("click", () => update("create", {}));
 joinForm.addEventListener("submit", event => {
   event.preventDefault();
   update("join", { code: codeInput.value.trim().toUpperCase() });
-});
-readyButton.addEventListener("click", () => {
-  const me = room?.members.find(m => m.id === authState.user?.id);
-  if (me) update("ready", { ready: !me.ready });
 });
 leaveButton.addEventListener("click", () => update("leave", {}));
 document.querySelector("#leaveRoom-waiting")?.addEventListener("click", () => update("leave", {}));

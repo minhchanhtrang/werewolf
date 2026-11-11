@@ -38,6 +38,9 @@ export async function initializeDatabase(pool) {
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS bot_count INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS role_state JSONB;
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS role_config JSONB;
+    ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS lobby_messages JSONB NOT NULL DEFAULT '[]';
+    ALTER TABLE ww_room_members ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ALTER TABLE ww_room_members ADD COLUMN IF NOT EXISTS exit_requested_at TIMESTAMPTZ;
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     CREATE INDEX IF NOT EXISTS ww_rooms_activity_idx ON ww_rooms(last_active_at);
     ALTER TABLE ww_rooms ADD COLUMN IF NOT EXISTS capacity INTEGER NOT NULL DEFAULT 10 CHECK (capacity BETWEEN 5 AND 20);

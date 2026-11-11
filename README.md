@@ -1,7 +1,7 @@
-<div align="center">
+﻿<div align="center">
   <img src="assets/backgrounds/game-logo.png" alt="Logo Ma Sói" width="240">
 
-  <h1>Ma Sói · Đêm bên lửa trại</h1>
+  <h1>Ma Sói · Đêm định mệnh</h1>
 
   <p>Game Ma Sói online trên trình duyệt với ngôi làng pixel art, vai trò bí mật và những cuộc bỏ phiếu quanh lửa trại.</p>
 
@@ -10,7 +10,7 @@
 
 ## Giới thiệu
 
-**Ma Sói · Đêm bên lửa trại** là game web nhiều người chơi, lấy cảm hứng từ trò chơi Ma Sói. Người chơi tạo phòng, mời bạn bè bằng mã phòng, nhận vai bí mật rồi cùng trải qua các lượt ban đêm, thảo luận và bỏ phiếu ban ngày.
+**Ma Sói · Đêm định mệnh** là game web nhiều người chơi, lấy cảm hứng từ trò chơi Ma Sói. Người chơi tạo phòng, mời bạn bè bằng mã phòng, nhận vai bí mật rồi cùng trải qua các lượt ban đêm, thảo luận và bỏ phiếu ban ngày.
 
 Backend điều khiển tiến trình ván đấu, chia vai, xác minh hành động và xác định kết quả. Giao diện có nhân vật pixel art, bối cảnh ngày/đêm và bố cục thích ứng cho máy tính lẫn điện thoại.
 

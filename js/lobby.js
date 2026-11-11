@@ -1,4 +1,4 @@
-﻿// lobby.js — Room management and screen routing for Ma Sói · Đêm bên lửa trại
+﻿// lobby.js — Room management and screen routing for Ma Sói · Đêm định mệnh
 // Updated: render() now switches between #screen-lobby, #screen-waiting, #screen-game.
 // All existing game/room logic is preserved unchanged.
 
@@ -301,7 +301,7 @@ function render() {
 
   const titles = {
     auth: "Sảnh chờ", lobby: "Sảnh chờ", create: "Tạo phòng",
-    waiting: "Phòng chờ", play: "Bên lửa trại"
+    waiting: "Phòng chờ", play: "Đêm định mệnh"
   };
 
   const lobbyHeading = document.querySelector("#lobbyHeading");

@@ -1,4 +1,4 @@
-// auth.js — Authentication logic for Ma Sói · Đêm bên lửa trại
+﻿// auth.js — Authentication logic for Ma Sói · Đêm định mệnh
 // Updated: DOM IDs now use #screen-login / #screen-lobby etc.
 // All auth logic preserved; only DOM targeting updated.
 

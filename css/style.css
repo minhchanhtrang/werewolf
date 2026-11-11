@@ -19,7 +19,7 @@
 .village-chat h3 { font-size: 12px; color: #d6bd8b; margin-bottom: 4px; }
 .village-chat__toggle { display: none; }
 #villageChatMessages { list-style: none; height: min(180px, 25dvh); overflow-y: auto; overflow-wrap: anywhere; }
-#villageChatMessages li { line-height: 1.5; padding: 2px 0; }
+#villageChatMessages li { line-height: 1.5; padding: 5px 0; border-bottom: 1px solid #ffffff10; }
 #villageChatMessages strong { color: #e4cc9f; }
 #villageChatForm { display: flex; gap: 6px; margin-top: 5px; }
 #villageChatInput { flex: 1; width: 0; min-width: 0; padding: 7px; border: 1px solid #52665b; border-radius: 4px; background: #080d14; color: #eee; font: inherit; }
@@ -1901,12 +1901,130 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
   --chat-gap: 12px;
   --chat-space: max(0px, calc(100dvh - var(--game-header-height, 80px) - var(--game-footer-height, 112px) - 24px));
 }
+#screen-game .village-chat, #screen-game .wolf-chat {
+  width: min(340px, calc(100vw - 24px));
+  font-size: 14px;
+}
+#screen-game .village-chat h3 { font-size: 14px; }
+#screen-game #villageChatInput, #screen-game #wolfChatInput { font-size: 16px; }
+#screen-game #villageChatSend, #screen-game #wolfChatSend { font-size: 14px; }
+/* Chat controls use the same appearance for every role. */
+#screen-game #toggleWolfChat {
+  display: inline-block;
+  border: 1px solid #a66562;
+  border-radius: 4px;
+  background: transparent;
+  color: #edac98;
+  font: inherit;
+}
+#screen-game #wolfChat.wolf-chat:not(.is-open) {
+  height: auto;
+  width: auto;
+  bottom: calc(var(--game-footer-height, 112px) + 12px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#screen-game .wolf-chat:not(.is-open) .wolf-chat__heading { display: flex; }
+#screen-game .wolf-chat:not(.is-open) .wolf-chat__heading > span { display: none; }
+#screen-game .wolf-chat:not(.is-open) #toggleWolfChat { background: #131923f5; }
+#screen-game .wolf-chat:not(.is-open) #wolfChatMessages,
+#screen-game .wolf-chat:not(.is-open) #wolfChatForm,
+#screen-game .wolf-chat:not(.is-open) #wolfChatStatus { display: none; }
 #screen-game .village-chat {
   display: flex; flex-direction: column;
   height: var(--chat-space); min-height: 0;
 }
-#screen-game:has(#wolfChat:not([hidden])) .village-chat {
-  height: calc((var(--chat-space) - 8px) * .65);
+
+/* One visible channel; private chat never leaves a separate button or gap. */
+#screen-game[data-chat-channel] #wolfChat { display: none; }
+#screen-game[data-chat-channel="wolf"] #villageChat { display: none; }
+#screen-game[data-chat-channel="wolf"] #wolfChat:not([hidden]) { display: flex; }
+#screen-game[data-chat-channel] #villageChat.village-chat,
+#screen-game[data-chat-channel] #wolfChat.wolf-chat {
+  height: var(--chat-space);
+  bottom: calc(var(--game-footer-height, 112px) + 12px);
+}
+#screen-game[data-chat-channel] #villageChat:not(.is-open) { height: auto; }
+#screen-game[data-chat-channel] #villageChat:not(.is-open) #villageChatMessages,
+#screen-game[data-chat-channel] #villageChat:not(.is-open) #villageChatForm,
+#screen-game[data-chat-channel] #villageChat:not(.is-open) #villageChatStatus { display: none; }
+#screen-game[data-chat-channel] #toggleVillageChat,
+#screen-game[data-chat-channel] #toggleWolfChat { display: none; }
+#screen-game[data-chat-channel] .village-chat,
+#screen-game[data-chat-channel] .wolf-chat {
+  padding: 8px 12px;
+  border: 1px solid #52665b;
+  background: #101922cc;
+  backdrop-filter: blur(6px);
+  box-shadow: none;
+}
+#screen-game[data-chat-channel] .village-chat h3,
+#screen-game[data-chat-channel] .wolf-chat__heading {
+  color: #d6bd8b;
+  font-family: "Josefin Sans", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+#screen-game[data-chat-channel] #villageChatMessages strong,
+#screen-game[data-chat-channel] #wolfChatMessages strong { color: #e4cc9f; }
+#screen-game[data-chat-channel] #villageChatInput,
+#screen-game[data-chat-channel] #wolfChatInput {
+  color: #eee;
+  padding: 7px;
+  height: 42px;
+  font-family: "Josefin Sans", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+}
+#screen-game #villageChatForm, #screen-game #wolfChatForm {
+  gap: 6px;
+  margin-top: 5px;
+  align-items: stretch;
+}
+#screen-game #villageChatSend, #screen-game #wolfChatSend {
+  height: 42px;
+  min-height: 42px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+#screen-game #villageChatMessages, #screen-game #wolfChatMessages { margin: 8px 0; }
+#screen-game .chat-channel-hint {
+  position: fixed;
+  left: 364px;
+  bottom: calc(var(--game-footer-height, 112px) + 16px);
+  z-index: 66;
+  max-width: min(220px, calc(100vw - 376px));
+  margin: 0;
+  padding: 2px 0;
+  border-radius: 4px;
+  background: transparent;
+  pointer-events: none;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgb(165 175 169 / 38%);
+}
+#screen-game .chat-channel-hint[hidden] { display: none; }
+#screen-game[data-chat-channel] .wolf-chat__heading > span,
+#screen-game[data-chat-channel] .village-chat h3 > span {
+  user-select: none;
+  touch-action: manipulation;
+}
+@media (max-width: 650px) {
+  #screen-game[data-chat-channel] #villageChat.village-chat,
+  #screen-game[data-chat-channel] #wolfChat.wolf-chat {
+    height: max(0px, calc(var(--chat-space) - 20px));
+    bottom: calc(var(--game-footer-height, 112px) + 28px);
+  }
+  #screen-game .chat-channel-hint {
+    left: auto;
+    right: 8px;
+    bottom: calc(var(--game-footer-height, 112px) + 6px);
+    max-width: min(220px, calc(100vw - 16px));
+  }
 }
 #screen-game .wolf-chat {
   display: flex; flex-direction: column;
@@ -1914,6 +2032,7 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
 }
 #screen-game #villageChatMessages, #screen-game #wolfChatMessages {
   flex: 1; min-height: 0; height: auto; max-height: none;
+  font-size: 16px;
 }
 #screen-game #villageChatForm, #screen-game #wolfChatForm,
 #screen-game .village-chat h3, #screen-game .wolf-chat__heading { flex-shrink: 0; }
@@ -1922,19 +2041,15 @@ body :is(.s-login__title, .topbar__title, .intro-heading, #resultHeading, .pixel
   align-items: center; gap: 4px; text-align: center;
 }
 #screen-game .wolf-chat__heading > span, #screen-game .village-chat h3 > span { grid-column: 2; }
-#screen-game .wolf-chat__heading > button, #screen-game .village-chat h3 > button { grid-column: 3; justify-self: end; padding: 4px; font-size: 10px; white-space: nowrap; }
+#screen-game .wolf-chat__heading > button, #screen-game .village-chat h3 > button { grid-column: 3; justify-self: end; padding: 5px 8px; font-size: 12px; white-space: nowrap; }
 @media (max-width: 650px) {
+  #screen-game .village-chat, #screen-game .wolf-chat { width: min(300px, calc(100vw - 16px)); }
   #screen-game { --chat-space: max(0px, calc(100dvh - var(--game-header-height, 120px) - var(--game-footer-height, 112px) - 16px)); }
   #screen-game #villageChat.village-chat:not(.is-open) { height: auto; }
   #screen-game #wolfChat.wolf-chat:not(.is-open) { height: auto; }
+  #screen-game #wolfChat.wolf-chat:not(.is-open) { bottom: calc(var(--game-footer-height, 112px) + 8px); }
   .wolf-chat__heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .wolf-chat:not(.is-open) #wolfChatMessages,
   .wolf-chat:not(.is-open) #wolfChatForm,
   .wolf-chat:not(.is-open) #wolfChatStatus { display: none; }
-  #screen-game:has(#wolfChat:not([hidden]):not(.is-open)) #villageChat.is-open {
-    height: max(0px, calc(var(--chat-space) - var(--wolf-chat-height, 50px) - 8px));
-  }
-  #screen-game:has(.village-chat:not(.is-open)) .wolf-chat {
-    height: max(0px, calc(var(--chat-space) - var(--village-chat-height, 44px) - 8px));
-  }
 }

@@ -1,4 +1,7 @@
+import { getChatPrivacy } from './chat-privacy.js';
+
 export function createVillageChat(send) {
+  const privacy = getChatPrivacy();
   const panel=document.querySelector('#villageChat'),list=document.querySelector('#villageChatMessages');
   const form=document.querySelector('#villageChatForm'),input=document.querySelector('#villageChatInput');
   const button=document.querySelector('#villageChatSend'),status=document.querySelector('#villageChatStatus');
@@ -22,6 +25,7 @@ export function createVillageChat(send) {
     if(next?.gameId!==current?.gameId){epoch++;sending=false;key='';input.value='';list.replaceChildren();status.textContent='';panel.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');toggle.textContent='Mở chat';}
     current=next;panel.hidden=!current;input.disabled=!current?.canSend;button.disabled=!current?.canSend||busy||sending;
     input.placeholder=current?.canSend?'Nhắn với dân làng…':'Chỉ đọc · Chat mở khi thảo luận';
+    privacy.refresh();
     if(!current)return;
     const signature=JSON.stringify(current.messages);if(signature===key)return;
     const bottom=list.scrollHeight-list.scrollTop-list.clientHeight<40;

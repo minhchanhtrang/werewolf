@@ -1,4 +1,7 @@
+import { getChatPrivacy } from './chat-privacy.js';
+
 export function createWolfChat(send) {
+  const privacy = getChatPrivacy();
   const panel = document.querySelector("#wolfChat");
   const list = document.querySelector("#wolfChatMessages");
   const form = document.querySelector("#wolfChatForm");
@@ -35,6 +38,7 @@ export function createWolfChat(send) {
     }
     current = next;
     panel.hidden = !current;
+    privacy.update(current);
     button.disabled = !current || busy || sending;
     input.disabled = !current;
     if (!current) return;
